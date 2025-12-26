@@ -19,6 +19,7 @@ from function_size_calculator import (
     FunctionInfo,
     JavaScriptParser,
     JavaParser,
+    PythonParser,
     ExcelWriter,
     scan_single_repository
 )
@@ -195,6 +196,69 @@ class TestJavaParser(unittest.TestCase):
         self.assertEqual(len(functions), 0)
 
 
+class TestPythonParser(unittest.TestCase):
+    """Test cases for PythonParser."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.fixtures_dir = os.path.join(
+            os.path.dirname(__file__), 
+            'fixtures'
+        )
+        self.py_file = os.path.join(self.fixtures_dir, 'sample.py')
+    
+    def test_parse_python_file(self):
+        """Test parsing a Python file."""
+        functions = PythonParser.parse_functions(self.py_file)
+        
+        # Should find multiple functions
+        self.assertGreater(len(functions), 0)
+        
+        # Check for specific functions
+        func_names = [f.name for f in functions]
+        self.assertIn("simple_function", func_names)
+        self.assertIn("large_function", func_names)
+        self.assertIn("async_function", func_names)
+    
+    def test_python_class_methods(self):
+        """Test that class methods are detected."""
+        functions = PythonParser.parse_functions(self.py_file)
+        func_names = [f.name for f in functions]
+        
+        # Test class methods
+        self.assertIn("__init__", func_names)
+        self.assertIn("instance_method", func_names)
+        self.assertIn("static_method", func_names)
+        self.assertIn("class_method", func_names)
+    
+    def test_python_function_size(self):
+        """Test that Python function sizes are calculated correctly."""
+        functions = PythonParser.parse_functions(self.py_file)
+        
+        # Find the simple_function
+        simple = next((f for f in functions if f.name == "simple_function"), None)
+        self.assertIsNotNone(simple)
+        
+        # simple_function should be small
+        self.assertLess(simple.size, 10)
+        
+        # Find large_function
+        large = next((f for f in functions if f.name == "large_function"), None)
+        self.assertIsNotNone(large)
+        
+        # large_function should be larger
+        self.assertGreater(large.size, simple.size)
+    
+    def test_parse_nonexistent_python_file(self):
+        """Test parsing a Python file that doesn't exist."""
+        # Suppress expected warning output
+        with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+            functions = PythonParser.parse_functions("/nonexistent/sample.py")
+        
+        # Should return empty list, not crash
+        self.assertEqual(len(functions), 0)
+
+
 class TestExcelWriter(unittest.TestCase):
     """Test cases for ExcelWriter."""
     
@@ -297,6 +361,85 @@ class TestExcelWriter(unittest.TestCase):
         self.assertLessEqual(len(sheet_names[0]), 31)
         self.assertNotIn('/', sheet_names[0])
         
+        wb.close()
+    
+    @unittest.skipIf(openpyxl is None, "openpyxl not available")
+    def test_top_n_parameter(self):
+        """Test writing results with custom top N parameter."""
+        repo_results = {
+            'test-repo': self.sample_functions
+        }
+        
+        # Write only top 3
+        with redirect_stdout(StringIO()):
+            ExcelWriter.write_results(repo_results, self.output_file, top_n=3)
+        
+        wb = openpyxl.load_workbook(self.output_file)
+        ws = wb['test-repo']
+        
+        # Should have header + 3 data rows + empty row + 5 summary rows = 9 rows minimum
+        # Count data rows (non-empty cells in column A starting from row 2)
+        data_rows = 0
+        for row in range(2, 10):
+            if ws.cell(row, 1).value and isinstance(ws.cell(row, 1).value, int):
+                data_rows += 1
+        
+        self.assertEqual(data_rows, 3)
+        wb.close()
+    
+    @unittest.skipIf(openpyxl is None, "openpyxl not available")
+    def test_min_size_filter(self):
+        """Test writing results with minimum size filter."""
+        repo_results = {
+            'test-repo': self.sample_functions
+        }
+        
+        # Filter out functions smaller than 10 lines (should keep func1, func2, func3, func6)
+        with redirect_stdout(StringIO()):
+            ExcelWriter.write_results(repo_results, self.output_file, top_n=10, min_size=10)
+        
+        wb = openpyxl.load_workbook(self.output_file)
+        ws = wb['test-repo']
+        
+        # Count data rows
+        data_rows = 0
+        for row in range(2, 10):
+            if ws.cell(row, 1).value and isinstance(ws.cell(row, 1).value, int):
+                data_rows += 1
+        
+        # Should have 4 functions (func2, func3, func6, func1)
+        self.assertEqual(data_rows, 4)
+        
+        # All should be >= 10 lines
+        for row in range(2, 6):
+            size = ws.cell(row, 6).value
+            if size is not None and isinstance(size, int):
+                self.assertGreaterEqual(size, 10)
+        
+        wb.close()
+    
+    @unittest.skipIf(openpyxl is None, "openpyxl not available")
+    def test_summary_statistics(self):
+        """Test that summary statistics are added to Excel output."""
+        repo_results = {
+            'test-repo': self.sample_functions
+        }
+        
+        with redirect_stdout(StringIO()):
+            ExcelWriter.write_results(repo_results, self.output_file)
+        
+        wb = openpyxl.load_workbook(self.output_file)
+        ws = wb['test-repo']
+        
+        # Look for summary statistics section
+        found_summary = False
+        for row in range(1, 20):
+            cell_value = ws.cell(row, 1).value
+            if cell_value == 'Summary Statistics':
+                found_summary = True
+                break
+        
+        self.assertTrue(found_summary, "Summary statistics section not found")
         wb.close()
 
 
