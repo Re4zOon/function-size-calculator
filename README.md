@@ -33,6 +33,38 @@ pip install -r requirements.txt
 - Git (for cloning remote repositories)
 - openpyxl (automatically installed from requirements.txt)
 
+## Testing
+
+The repository includes a comprehensive test suite to ensure code quality and prevent regressions.
+
+### Running Tests
+
+Run all tests:
+```bash
+python3 -m unittest discover -s tests -p "test_*.py" -v
+```
+
+Run specific test class:
+```bash
+python3 -m unittest tests.test_function_size_calculator.TestJavaScriptParser -v
+```
+
+Run a specific test:
+```bash
+python3 -m unittest tests.test_function_size_calculator.TestJavaScriptParser.test_parse_javascript_file
+```
+
+### Test Coverage
+
+The test suite includes:
+- **Unit tests** for FunctionInfo class
+- **Parser tests** for JavaScript/TypeScript and Java parsers
+- **Excel writer tests** for output generation
+- **Integration tests** for repository scanning
+- **CLI tests** for command-line argument parsing
+
+Test fixtures are located in `tests/fixtures/` and include sample JavaScript, TypeScript, and Java files.
+
 ## Usage
 
 ### Basic Usage
