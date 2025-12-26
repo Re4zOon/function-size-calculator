@@ -5,6 +5,7 @@ Scans git repositories to find the largest functions in Node.js and Java codebas
 Outputs results to an Excel (XLSX) file with each repository on a separate tab.
 """
 
+import argparse
 import os
 import re
 import sys
@@ -287,8 +288,6 @@ class ExcelWriter:
 
 def main():
     """Main entry point."""
-    import argparse
-    
     parser = argparse.ArgumentParser(
         description='Find the largest functions in git repositories (Node.js and Java)'
     )
@@ -359,7 +358,7 @@ def main():
             try:
                 repo_name, functions = future.result()
                 
-                if repo_name:
+                if repo_name is not None:
                     repo_results[repo_name] = functions
                     
                     # Print summary
