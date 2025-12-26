@@ -1,12 +1,12 @@
 # Function Size Calculator
 
-A Python tool that scans git repositories to find the largest functions in Java, Node.js, and Python codebases. The results are exported to an Excel (XLSX) file with each repository on a separate tab.
+A Python tool that scans git repositories to find the largest functions in Java, Node.js, Python, and C# codebases. The results are exported to an Excel (XLSX) or JSON file with each repository on a separate tab.
 
 ## Features
 
 - Scans multiple git repositories (local or remote)
 - **Parallel processing** for efficient scanning of multiple repositories
-- Supports Node.js (JavaScript, TypeScript), Java, and **Python**
+- Supports Node.js (JavaScript, TypeScript), Java, Python, and **C#**
 - **Memory-efficient streaming** handles very large files without loading entire files into memory
 - **Multiple output formats**: Excel (XLSX) and JSON
 - **Configurable number of top functions** to report (default: 5)
@@ -233,6 +233,13 @@ To use JSON format, either:
 - Static and class methods
 - Supports: `.py` files
 
+### C#
+- Methods with various modifiers: `public async Task<string> Method() {}`
+- Access modifiers: public, private, protected, internal
+- Other modifiers: static, virtual, override, abstract, sealed, async
+- Generic return types
+- Supports: `.cs` files
+
 ## How It Works
 
 1. **Repository Access**: Clones remote repositories to temporary directories or uses local paths
@@ -296,7 +303,14 @@ To use JSON format, either:
 - Use the `.json` extension: `-o results.json`
 - Explicitly specify format: `-f json -o results.json`
 
-## License
+## Limitations
+
+- Function size is measured by line count (including braces and blank lines)
+- Nested functions are counted separately
+- Very complex or unconventional syntax may not be detected
+- Excludes common dependency directories (node_modules, target, build, etc.)
+
+## Performance
 
 This project is open source and available under the MIT License.
 

@@ -21,6 +21,7 @@ from function_size_calculator import (
     JavaScriptParser,
     JavaParser,
     PythonParser,
+    CSharpParser,
     ExcelWriter,
     JSONWriter,
     scan_single_repository
@@ -204,6 +205,72 @@ class TestJavaParser(unittest.TestCase):
         # Suppress expected warning output
         with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
             functions = JavaParser.parse_functions("/nonexistent/Sample.java")
+        
+        # Should return empty list, not crash
+        self.assertEqual(len(functions), 0)
+
+
+class TestCSharpParser(unittest.TestCase):
+    """Test cases for CSharpParser."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.fixtures_dir = os.path.join(
+            os.path.dirname(__file__), 
+            'fixtures'
+        )
+        self.cs_file = os.path.join(self.fixtures_dir, 'Sample.cs')
+    
+    def test_parse_csharp_file(self):
+        """Test parsing a C# file."""
+        functions = CSharpParser.parse_functions(self.cs_file)
+        
+        # Should find multiple methods
+        self.assertGreater(len(functions), 0)
+        
+        # Check for specific methods
+        func_names = [f.name for f in functions]
+        self.assertIn("simpleAdd", func_names)
+        self.assertIn("largeMethod", func_names)
+        self.assertIn("asyncMethod", func_names)
+        self.assertIn("virtualMethod", func_names)
+        self.assertIn("ToString", func_names)
+    
+    def test_csharp_method_modifiers(self):
+        """Test that methods with various modifiers are detected."""
+        functions = CSharpParser.parse_functions(self.cs_file)
+        func_names = [f.name for f in functions]
+        
+        # Test different modifier combinations
+        self.assertIn("simpleAdd", func_names)  # public
+        self.assertIn("largeMethod", func_names)  # private static
+        self.assertIn("asyncMethod", func_names)  # protected async
+        self.assertIn("virtualMethod", func_names)  # internal virtual
+        self.assertIn("ToString", func_names)  # public override
+    
+    def test_csharp_function_size(self):
+        """Test that C# method sizes are calculated correctly."""
+        functions = CSharpParser.parse_functions(self.cs_file)
+        
+        # Find the largeMethod
+        large = next((f for f in functions if f.name == "largeMethod"), None)
+        self.assertIsNotNone(large)
+        
+        # largeMethod should be at least 10 lines
+        self.assertGreaterEqual(large.size, 10)
+        
+        # Find simpleAdd
+        simple = next((f for f in functions if f.name == "simpleAdd"), None)
+        self.assertIsNotNone(simple)
+        
+        # simpleAdd should be small
+        self.assertLess(simple.size, 5)
+    
+    def test_parse_nonexistent_csharp_file(self):
+        """Test parsing a C# file that doesn't exist."""
+        # Suppress expected warning output
+        with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+            functions = CSharpParser.parse_functions("/nonexistent/Sample.cs")
         
         # Should return empty list, not crash
         self.assertEqual(len(functions), 0)
