@@ -2,7 +2,7 @@
 """
 Function Size Calculator
 Scans git repositories to find the largest functions in Node.js and Java codebases.
-Outputs results to an XLS file with each repository on a separate tab.
+Outputs results to an Excel (XLSX) file with each repository on a separate tab.
 """
 
 import os
