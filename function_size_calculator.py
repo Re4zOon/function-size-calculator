@@ -24,6 +24,32 @@ except ImportError:
     sys.exit(1)
 
 
+def print_progress_bar(current: int, total: int, prefix: str = '', suffix: str = '', length: int = 50):
+    """
+    Print a progress bar to the console.
+    
+    Args:
+        current: Current progress value
+        total: Total value for 100% completion
+        prefix: Text to display before the progress bar
+        suffix: Text to display after the progress bar
+        length: Character length of the progress bar
+    """
+    if total == 0:
+        return
+    
+    percent = 100 * (current / float(total))
+    filled_length = int(length * current // total)
+    bar = '█' * filled_length + '-' * (length - filled_length)
+    
+    # Use \r to return to the start of the line and overwrite
+    print(f'\r{prefix} |{bar}| {percent:.1f}% {suffix}', end='', flush=True)
+    
+    # Print newline when complete
+    if current == total:
+        print()
+
+
 class FunctionInfo:
     """
     Represents information about a function or method.
@@ -542,10 +568,14 @@ def main():
     
     print(f"Scanning {len(repositories)} repositories using {args.jobs} parallel jobs...")
     print(f"Configuration: Top {args.top_n} functions, Minimum size: {args.min_size} lines")
-    print(f"{'='*60}")
+    print(f"{'='*60}\n")
     
     repo_results = {}
     completed_count = 0
+    total_repos = len(repositories)
+    
+    # Show initial progress bar
+    print_progress_bar(0, total_repos, prefix='Progress:', suffix='Complete')
     
     # Process repositories in parallel
     with ProcessPoolExecutor(max_workers=args.jobs) as executor:
@@ -562,27 +592,49 @@ def main():
                     repo_results[repo_name] = functions
                     completed_count += 1
                     
+                    # Update progress bar
+                    print_progress_bar(completed_count, total_repos, 
+                                     prefix='Progress:', 
+                                     suffix=f'Complete ({completed_count}/{total_repos})')
+                    
                     # Filter by minimum size for display
                     filtered = [f for f in functions if f.size >= args.min_size]
                     
-                    # Print summary
+                    # Print summary for this repository
                     top_n_display = sorted(filtered, key=lambda f: f.size, reverse=True)[:args.top_n]
-                    print(f"\n[{completed_count}/{len(repositories)}] Repository: {repo}")
-                    print(f"Found {len(functions)} functions ({len(filtered)} >= {args.min_size} lines). Top {args.top_n} largest:")
+                    print(f"\n✓ Repository: {repo}")
+                    print(f"  Found {len(functions)} functions ({len(filtered)} >= {args.min_size} lines). Top {args.top_n} largest:")
                     for i, func in enumerate(top_n_display, 1):
-                        print(f"  {i}. {func.name} ({func.size} lines) - {func.file_path}")
-                    print(f"{'='*60}")
+                        print(f"    {i}. {func.name} ({func.size} lines) - {func.file_path}")
+                    
+                    # Print progress bar again after summary (if not last repo)
+                    if completed_count < total_repos:
+                        print()  # Empty line before progress bar
+                        print_progress_bar(completed_count, total_repos, 
+                                         prefix='Progress:', 
+                                         suffix=f'Complete ({completed_count}/{total_repos})')
             except Exception as e:
-                print(f"Error processing repository {repo}: {e}")
+                completed_count += 1
+                print_progress_bar(completed_count, total_repos, 
+                                 prefix='Progress:', 
+                                 suffix=f'Complete ({completed_count}/{total_repos})')
+                print(f"\n✗ Error processing repository {repo}: {e}")
+                if completed_count < total_repos:
+                    print()
+                    print_progress_bar(completed_count, total_repos, 
+                                     prefix='Progress:', 
+                                     suffix=f'Complete ({completed_count}/{total_repos})')
+    
     
     # Write results to Excel
+    print()  # Add blank line after progress bar
     if repo_results:
         ExcelWriter.write_results(repo_results, args.output, args.top_n, args.min_size)
         print(f"\n{'='*60}")
-        print(f"Done! Check {args.output} for detailed results.")
+        print(f"✓ Done! Check {args.output} for detailed results.")
         print(f"{'='*60}")
     else:
-        print("\nNo results to write. Please check the repository paths/URLs.")
+        print("\n✗ No results to write. Please check the repository paths/URLs.")
 
 
 if __name__ == '__main__':
