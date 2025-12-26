@@ -207,6 +207,14 @@ The tool generates an Excel file with the following structure:
 - Very complex or unconventional syntax may not be detected
 - Excludes common dependency directories (node_modules, target, build, etc.)
 
+## Performance
+
+The tool is optimized for scanning large codebases:
+- **Parallel processing** scans multiple repositories concurrently
+- **Efficient path filtering** uses Path.parts for accurate directory exclusion
+- **Progress reporting** provides real-time feedback during scans
+- Successfully tested on repositories with thousands of functions
+
 ## License
 
 This project is open source and available under the MIT License.
