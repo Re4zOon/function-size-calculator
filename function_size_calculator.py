@@ -13,6 +13,7 @@ import shutil
 from pathlib import Path
 from typing import List, Dict, Tuple
 import subprocess
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 try:
     import openpyxl
@@ -154,21 +155,18 @@ class JavaParser:
         return functions
 
 
-class RepositoryScanner:
-    """Scans git repositories for functions."""
-    
-    def __init__(self):
-        self.temp_dirs = []
-    
-    def clone_or_use_repo(self, repo_path: str) -> Tuple[str, bool]:
-        """
-        Clone repository if it's a URL, or use local path.
-        Returns (local_path, is_temp) tuple.
-        """
+def scan_single_repository(repo_path: str) -> Tuple[str, List[FunctionInfo]]:
+    """
+    Scan a single repository and return results.
+    This function is designed to be called in parallel.
+    Returns (repo_name, functions) tuple.
+    """
+    temp_dir = None
+    try:
+        # Clone or use local repo
         if repo_path.startswith('http://') or repo_path.startswith('https://') or repo_path.startswith('git@'):
             # It's a remote repository - clone it
             temp_dir = tempfile.mkdtemp(prefix='function_calculator_')
-            self.temp_dirs.append(temp_dir)
             
             print(f"Cloning repository: {repo_path}")
             try:
@@ -178,24 +176,17 @@ class RepositoryScanner:
                     capture_output=True,
                     text=True
                 )
-                return temp_dir, True
+                local_path = temp_dir
             except subprocess.CalledProcessError as e:
                 print(f"Error cloning repository {repo_path}: {e}")
-                return None, False
+                return None, []
         else:
             # It's a local path
             if os.path.exists(repo_path):
-                return repo_path, False
+                local_path = repo_path
             else:
                 print(f"Error: Local path does not exist: {repo_path}")
-                return None, False
-    
-    def scan_repository(self, repo_path: str) -> List[FunctionInfo]:
-        """Scan a repository and return all functions found."""
-        local_path, is_temp = self.clone_or_use_repo(repo_path)
-        
-        if local_path is None:
-            return []
+                return None, []
         
         all_functions = []
         
@@ -225,13 +216,17 @@ class RepositoryScanner:
                 func.file_path = os.path.relpath(func.file_path, local_path)
             all_functions.extend(functions)
         
-        return all_functions
+        # Get repository name
+        repo_name = repo_path.split('/')[-1].replace('.git', '')
+        if not repo_name:
+            repo_name = 'repository'
+        
+        return repo_name, all_functions
     
-    def cleanup(self):
-        """Clean up temporary directories."""
-        for temp_dir in self.temp_dirs:
-            if os.path.exists(temp_dir):
-                shutil.rmtree(temp_dir)
+    finally:
+        # Cleanup temporary directory
+        if temp_dir and os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
 
 
 class ExcelWriter:
@@ -299,51 +294,87 @@ def main():
     )
     parser.add_argument(
         'repositories',
-        nargs='+',
+        nargs='*',
         help='Git repository URLs or local paths to scan'
+    )
+    parser.add_argument(
+        '-i', '--input-file',
+        help='File containing list of repository URLs/paths (one per line)'
     )
     parser.add_argument(
         '-o', '--output',
         default='function_sizes.xlsx',
         help='Output Excel (XLSX) file name (default: function_sizes.xlsx)'
     )
+    parser.add_argument(
+        '-j', '--jobs',
+        type=int,
+        default=4,
+        help='Number of parallel jobs (default: 4)'
+    )
     
     args = parser.parse_args()
     
-    scanner = RepositoryScanner()
+    # Collect repositories from command line and/or input file
+    repositories = list(args.repositories) if args.repositories else []
+    
+    if args.input_file:
+        try:
+            with open(args.input_file, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    # Skip empty lines and comments
+                    if line and not line.startswith('#'):
+                        repositories.append(line)
+        except FileNotFoundError:
+            print(f"Error: Input file not found: {args.input_file}")
+            sys.exit(1)
+        except Exception as e:
+            print(f"Error reading input file: {e}")
+            sys.exit(1)
+    
+    if not repositories:
+        parser.print_help()
+        print("\nError: No repositories specified. Provide repositories via command line or --input-file")
+        sys.exit(1)
+    
+    print(f"Scanning {len(repositories)} repositories using {args.jobs} parallel jobs...")
+    print(f"{'='*60}")
+    
     repo_results = {}
     
-    try:
-        for repo in args.repositories:
-            print(f"\n{'='*60}")
-            print(f"Scanning repository: {repo}")
-            print(f"{'='*60}")
-            
-            functions = scanner.scan_repository(repo)
-            
-            # Use repository name as key
-            repo_name = repo.split('/')[-1].replace('.git', '')
-            if not repo_name:
-                repo_name = 'repository'
-            
-            repo_results[repo_name] = functions
-            
-            # Print summary
-            top_5 = sorted(functions, key=lambda f: f.size, reverse=True)[:5]
-            print(f"\nFound {len(functions)} functions. Top 5 largest:")
-            for i, func in enumerate(top_5, 1):
-                print(f"  {i}. {func.name} ({func.size} lines) - {func.file_path}")
+    # Process repositories in parallel
+    with ProcessPoolExecutor(max_workers=args.jobs) as executor:
+        # Submit all tasks
+        future_to_repo = {executor.submit(scan_single_repository, repo): repo for repo in repositories}
         
-        # Write results to Excel
-        if repo_results:
-            ExcelWriter.write_results(repo_results, args.output)
-            print(f"\n{'='*60}")
-            print(f"Done! Check {args.output} for detailed results.")
-            print(f"{'='*60}")
+        # Process completed tasks
+        for future in as_completed(future_to_repo):
+            repo = future_to_repo[future]
+            try:
+                repo_name, functions = future.result()
+                
+                if repo_name:
+                    repo_results[repo_name] = functions
+                    
+                    # Print summary
+                    top_5 = sorted(functions, key=lambda f: f.size, reverse=True)[:5]
+                    print(f"\nRepository: {repo}")
+                    print(f"Found {len(functions)} functions. Top 5 largest:")
+                    for i, func in enumerate(top_5, 1):
+                        print(f"  {i}. {func.name} ({func.size} lines) - {func.file_path}")
+                    print(f"{'='*60}")
+            except Exception as e:
+                print(f"Error processing repository {repo}: {e}")
     
-    finally:
-        # Cleanup temporary directories
-        scanner.cleanup()
+    # Write results to Excel
+    if repo_results:
+        ExcelWriter.write_results(repo_results, args.output)
+        print(f"\n{'='*60}")
+        print(f"Done! Check {args.output} for detailed results.")
+        print(f"{'='*60}")
+    else:
+        print("\nNo results to write. Please check the repository paths/URLs.")
 
 
 if __name__ == '__main__':

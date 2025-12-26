@@ -6,3 +6,9 @@ venv/
 
 # Output files
 *.xlsx
+
+# Temporary directories
+function_calculator_*/
+
+# Repository list files (examples)
+repos.txt
