@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Function Size Calculator
-Scans git repositories to find the largest functions in Node.js and Java codebases.
+Scans git repositories to find the largest functions in Node.js, Java, and Python codebases.
 Outputs results to an Excel (XLSX) file with each repository on a separate tab.
 """
 
@@ -537,6 +537,7 @@ def main():
     print(f"{'='*60}")
     
     repo_results = {}
+    completed_count = 0
     
     # Process repositories in parallel
     with ProcessPoolExecutor(max_workers=args.jobs) as executor:
@@ -551,13 +552,14 @@ def main():
                 
                 if repo_name is not None:
                     repo_results[repo_name] = functions
+                    completed_count += 1
                     
                     # Filter by minimum size for display
                     filtered = [f for f in functions if f.size >= args.min_size]
                     
                     # Print summary
                     top_n_display = sorted(filtered, key=lambda f: f.size, reverse=True)[:args.top_n]
-                    print(f"\nRepository: {repo}")
+                    print(f"\n[{completed_count}/{len(repositories)}] Repository: {repo}")
                     print(f"Found {len(functions)} functions ({len(filtered)} >= {args.min_size} lines). Top {args.top_n} largest:")
                     for i, func in enumerate(top_n_display, 1):
                         print(f"  {i}. {func.name} ({func.size} lines) - {func.file_path}")
