@@ -5,12 +5,14 @@ A Python tool that scans git repositories to find the largest functions in Java 
 ## Features
 
 - Scans multiple git repositories (local or remote)
+- **Parallel processing** for efficient scanning of multiple repositories
 - Supports Node.js (JavaScript, TypeScript) and Java
 - Finds the 5 largest functions in each repository
 - Exports results to Excel format with:
   - Each repository on a separate tab
   - Function name, file path, line numbers, and size
   - Formatted headers and auto-sized columns
+- Automatic cleanup of temporary cloned repositories
 
 ## Installation
 
@@ -58,33 +60,42 @@ python function_size_calculator.py https://github.com/user/repo1.git https://git
 python function_size_calculator.py /path/to/local/repo1 /path/to/local/repo2
 ```
 
-4. Specify custom output file:
+4. Scan repositories from an input file:
 ```bash
-python function_size_calculator.py -o my_results.xlsx https://github.com/user/repo.git
-```
-
-5. Mix local and remote repositories:
-```bash
-python function_size_calculator.py /local/repo https://github.com/user/remote-repo.git
-```
-
-6. Scan multiple repositories from a list (using shell):
-```bash
-# Create a file with repository URLs
+# Create a file with repository URLs (one per line)
 cat > repos.txt << EOF
 https://github.com/user/repo1.git
 https://github.com/user/repo2.git
 /path/to/local/repo3
+# Comments are supported
+https://github.com/user/repo4.git
 EOF
 
 # Scan all repositories from the file
-python function_size_calculator.py $(cat repos.txt)
+python function_size_calculator.py -i repos.txt
+```
+
+5. Specify custom output file:
+```bash
+python function_size_calculator.py -o my_results.xlsx https://github.com/user/repo.git
+```
+
+6. Mix input file and command-line repositories:
+```bash
+python function_size_calculator.py -i repos.txt https://github.com/user/extra-repo.git
+```
+
+7. Adjust parallel processing (default is 4 parallel jobs):
+```bash
+python function_size_calculator.py -i repos.txt -j 8  # Use 8 parallel jobs
 ```
 
 ### Command-Line Options
 
-- `repositories`: One or more git repository URLs or local paths (required)
+- `repositories`: One or more git repository URLs or local paths (optional if using -i)
+- `-i`, `--input-file`: File containing list of repository URLs/paths (one per line, comments with # are supported)
 - `-o`, `--output`: Output Excel file name (default: `function_sizes.xlsx`)
+- `-j`, `--jobs`: Number of parallel jobs for scanning repositories (default: 4)
 - `-h`, `--help`: Show help message
 
 ## Output Format
@@ -115,13 +126,14 @@ The tool generates an Excel file with the following structure:
 
 ## How It Works
 
-1. **Repository Access**: Clones remote repositories to a temporary directory or uses local paths
-2. **File Discovery**: Recursively finds all relevant source files (skips `node_modules`, `.git`, `target`, etc.)
-3. **Function Parsing**: Uses regex patterns to identify function/method declarations
-4. **Size Calculation**: Counts lines by tracking brace pairs `{}`
-5. **Ranking**: Sorts functions by line count and selects top 5 per repository
-6. **Export**: Creates formatted Excel file with results
-7. **Cleanup**: Removes temporary cloned repositories
+1. **Repository Access**: Clones remote repositories to temporary directories or uses local paths
+2. **Parallel Processing**: Scans multiple repositories concurrently for improved performance
+3. **File Discovery**: Recursively finds all relevant source files (skips `node_modules`, `.git`, `target`, etc.)
+4. **Function Parsing**: Uses regex patterns to identify function/method declarations
+5. **Size Calculation**: Counts lines by tracking brace pairs `{}`
+6. **Ranking**: Sorts functions by line count and selects top 5 per repository
+7. **Export**: Creates formatted Excel file with results
+8. **Cleanup**: Automatically removes temporary cloned repositories
 
 ## Limitations
 
