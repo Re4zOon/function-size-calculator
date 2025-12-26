@@ -68,6 +68,19 @@ python function_size_calculator.py -o my_results.xlsx https://github.com/user/re
 python function_size_calculator.py /local/repo https://github.com/user/remote-repo.git
 ```
 
+6. Scan multiple repositories from a list (using shell):
+```bash
+# Create a file with repository URLs
+cat > repos.txt << EOF
+https://github.com/user/repo1.git
+https://github.com/user/repo2.git
+/path/to/local/repo3
+EOF
+
+# Scan all repositories from the file
+python function_size_calculator.py $(cat repos.txt)
+```
+
 ### Command-Line Options
 
 - `repositories`: One or more git repository URLs or local paths (required)
