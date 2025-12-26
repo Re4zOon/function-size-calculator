@@ -172,17 +172,16 @@ class PythonParser:
                 # Find where the function signature ends (look for ':')
                 # Handle multi-line signatures by checking for unmatched parentheses
                 j = i
-                paren_count = line.count('(') - line.count(')')
+                paren_count = 0
                 while j < len(lines):
+                    paren_count += lines[j].count('(') - lines[j].count(')')
                     if ':' in lines[j] and paren_count == 0:
                         break
                     j += 1
-                    if j < len(lines):
-                        paren_count += lines[j].count('(') - lines[j].count(')')
                 
                 # Now find where the function body ends
                 j += 1
-                end_line = i  # Initialize to function start
+                end_line = i  # Initialize to function start (0-indexed)
                 
                 while j < len(lines):
                     current_line = lines[j]
@@ -207,8 +206,8 @@ class PythonParser:
                     functions.append(FunctionInfo(
                         name=func_name,
                         file_path=file_path,
-                        start_line=start_line,
-                        end_line=end_line + 1,
+                        start_line=i + 1,  # Convert to 1-indexed
+                        end_line=end_line + 1,  # Convert to 1-indexed
                         size=size
                     ))
             i += 1
