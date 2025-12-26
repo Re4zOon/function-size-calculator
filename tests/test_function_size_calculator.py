@@ -9,6 +9,8 @@ import sys
 import tempfile
 import shutil
 from pathlib import Path
+from io import StringIO
+from contextlib import redirect_stdout, redirect_stderr
 
 # Add parent directory to path to import the module
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -117,7 +119,9 @@ class TestJavaScriptParser(unittest.TestCase):
     
     def test_parse_nonexistent_file(self):
         """Test parsing a file that doesn't exist."""
-        functions = JavaScriptParser.parse_functions("/nonexistent/file.js")
+        # Suppress expected warning output
+        with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+            functions = JavaScriptParser.parse_functions("/nonexistent/file.js")
         
         # Should return empty list, not crash
         self.assertEqual(len(functions), 0)
@@ -183,7 +187,9 @@ class TestJavaParser(unittest.TestCase):
     
     def test_parse_nonexistent_java_file(self):
         """Test parsing a Java file that doesn't exist."""
-        functions = JavaParser.parse_functions("/nonexistent/Sample.java")
+        # Suppress expected warning output
+        with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+            functions = JavaParser.parse_functions("/nonexistent/Sample.java")
         
         # Should return empty list, not crash
         self.assertEqual(len(functions), 0)
@@ -219,7 +225,9 @@ class TestExcelWriter(unittest.TestCase):
             'test-repo': self.sample_functions
         }
         
-        ExcelWriter.write_results(repo_results, self.output_file)
+        # Suppress "Results saved to" output
+        with redirect_stdout(StringIO()):
+            ExcelWriter.write_results(repo_results, self.output_file)
         
         # Check that file was created
         self.assertTrue(os.path.exists(self.output_file))
@@ -253,7 +261,9 @@ class TestExcelWriter(unittest.TestCase):
             'repo2': self.sample_functions[3:]
         }
         
-        ExcelWriter.write_results(repo_results, self.output_file)
+        # Suppress "Results saved to" output
+        with redirect_stdout(StringIO()):
+            ExcelWriter.write_results(repo_results, self.output_file)
         
         # Check that file was created
         self.assertTrue(os.path.exists(self.output_file))
@@ -275,7 +285,9 @@ class TestExcelWriter(unittest.TestCase):
             'very/long/repository/name/that/exceeds/thirty/one/characters': self.sample_functions[:1]
         }
         
-        ExcelWriter.write_results(repo_results, self.output_file)
+        # Suppress "Results saved to" output
+        with redirect_stdout(StringIO()):
+            ExcelWriter.write_results(repo_results, self.output_file)
         
         wb = openpyxl.load_workbook(self.output_file)
         
@@ -340,7 +352,9 @@ public class Test {
     
     def test_scan_nonexistent_repository(self):
         """Test scanning a repository that doesn't exist."""
-        repo_name, functions = scan_single_repository("/nonexistent/repo")
+        # Suppress expected error output
+        with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+            repo_name, functions = scan_single_repository("/nonexistent/repo")
         
         # Should return None and empty list
         self.assertIsNone(repo_name)
