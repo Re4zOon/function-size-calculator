@@ -1,5 +1,6 @@
 # Python
 __pycache__/
+*.pyc
 
 # Virtual environment
 venv/
@@ -9,6 +10,8 @@ venv/
 
 # Temporary directories
 function_calculator_*/
+test_repo_*/
+test_function_calc_*/
 
 # Repository list files (examples)
 repos.txt
