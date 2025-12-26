@@ -331,7 +331,8 @@ def scan_single_repository(repo_path: str) -> Tuple[str, List[FunctionInfo]]:
         for ext in js_extensions:
             for file_path in Path(local_path).rglob(f'*{ext}'):
                 # Skip node_modules and other common directories
-                if 'node_modules' in str(file_path) or '.git' in str(file_path):
+                path_parts = file_path.parts
+                if 'node_modules' in path_parts or '.git' in path_parts:
                     continue
                 
                 functions = JavaScriptParser.parse_functions(str(file_path))
@@ -343,7 +344,8 @@ def scan_single_repository(repo_path: str) -> Tuple[str, List[FunctionInfo]]:
         # Find all Java files
         for file_path in Path(local_path).rglob('*.java'):
             # Skip common build directories
-            if any(d in str(file_path) for d in ['.git', 'target', 'build', 'out']):
+            path_parts = file_path.parts
+            if any(d in path_parts for d in ['.git', 'target', 'build', 'out']):
                 continue
             
             functions = JavaParser.parse_functions(str(file_path))
@@ -355,7 +357,8 @@ def scan_single_repository(repo_path: str) -> Tuple[str, List[FunctionInfo]]:
         # Find all Python files
         for file_path in Path(local_path).rglob('*.py'):
             # Skip common directories and virtual environments
-            if any(d in str(file_path) for d in ['.git', '__pycache__', 'venv', 'env', '.venv', 'site-packages']):
+            path_parts = file_path.parts
+            if any(d in path_parts for d in ['.git', '__pycache__', 'venv', 'env', '.venv', 'site-packages']):
                 continue
             
             functions = PythonParser.parse_functions(str(file_path))

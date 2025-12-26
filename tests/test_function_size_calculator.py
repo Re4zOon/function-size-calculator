@@ -252,10 +252,9 @@ class TestPythonParser(unittest.TestCase):
     def test_multiline_signature(self):
         """Test that functions with multi-line signatures are parsed correctly."""
         # Create a temporary file with a multi-line function signature
-        temp_file = os.path.join(self.fixtures_dir, 'temp_multiline.py')
-        try:
-            with open(temp_file, 'w') as f:
-                f.write("""def multi_line_func(
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            temp_file = f.name
+            f.write("""def multi_line_func(
     arg1: str,
     arg2: int,
     arg3: dict
@@ -264,7 +263,8 @@ class TestPythonParser(unittest.TestCase):
     y = 2
     return True
 """)
-            
+        
+        try:
             functions = PythonParser.parse_functions(temp_file)
             
             # Should find the function
