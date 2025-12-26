@@ -1,6 +1,6 @@
 # Function Size Calculator
 
-A Python tool that scans git repositories to find the largest functions in Java and Node.js codebases. The results are exported to an Excel (XLS) file with each repository on a separate tab.
+A Python tool that scans git repositories to find the largest functions in Java and Node.js codebases. The results are exported to an Excel (XLSX) file with each repository on a separate tab.
 
 ## Features
 

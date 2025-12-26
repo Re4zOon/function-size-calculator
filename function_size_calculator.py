@@ -234,12 +234,12 @@ class RepositoryScanner:
                 shutil.rmtree(temp_dir)
 
 
-class XLSWriter:
-    """Writes results to XLS file."""
+class ExcelWriter:
+    """Writes results to Excel (XLSX) file."""
     
     @staticmethod
     def write_results(repo_results: Dict[str, List[FunctionInfo]], output_file: str):
-        """Write results to XLS file with each repo on a separate tab."""
+        """Write results to Excel (XLSX) file with each repo on a separate tab."""
         wb = openpyxl.Workbook()
         # Remove default sheet
         if 'Sheet' in wb.sheetnames:
@@ -305,7 +305,7 @@ def main():
     parser.add_argument(
         '-o', '--output',
         default='function_sizes.xlsx',
-        help='Output XLS file name (default: function_sizes.xlsx)'
+        help='Output Excel (XLSX) file name (default: function_sizes.xlsx)'
     )
     
     args = parser.parse_args()
@@ -334,9 +334,9 @@ def main():
             for i, func in enumerate(top_5, 1):
                 print(f"  {i}. {func.name} ({func.size} lines) - {func.file_path}")
         
-        # Write results to XLS
+        # Write results to Excel
         if repo_results:
-            XLSWriter.write_results(repo_results, args.output)
+            ExcelWriter.write_results(repo_results, args.output)
             print(f"\n{'='*60}")
             print(f"Done! Check {args.output} for detailed results.")
             print(f"{'='*60}")
