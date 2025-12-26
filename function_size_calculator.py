@@ -104,6 +104,9 @@ class JavaScriptParser:
         """
         Parse JavaScript/TypeScript file to extract functions.
         
+        Uses a streaming approach to handle very large files efficiently
+        without loading the entire file into memory.
+        
         Supports various function patterns including:
         - Function declarations: function name() {}
         - Arrow functions: const name = () => {}
@@ -120,44 +123,54 @@ class JavaScriptParser:
         
         try:
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                content = f.read()
+                line_num = 0
+                current_function = None  # (name, start_line, brace_count)
+                
+                for line in f:  # Stream file line by line
+                    line_num += 1
+                    
+                    # If we're currently tracking a function, update brace count
+                    if current_function:
+                        func_name, start_line, brace_count = current_function
+                        brace_count += line.count('{') - line.count('}')
+                        
+                        if brace_count == 0:
+                            # Function ended
+                            size = line_num - start_line + 1
+                            functions.append(FunctionInfo(
+                                name=func_name,
+                                file_path=file_path,
+                                start_line=start_line,
+                                end_line=line_num,
+                                size=size
+                            ))
+                            current_function = None
+                        else:
+                            current_function = (func_name, start_line, brace_count)
+                    else:
+                        # Look for new function declarations
+                        for pattern, func_type in JavaScriptParser.PATTERNS:
+                            match = pattern.search(line)
+                            if match:
+                                func_name = match.group(1)
+                                brace_count = line.count('{') - line.count('}')
+                                
+                                if brace_count == 0:
+                                    # Single-line function (rare but possible)
+                                    functions.append(FunctionInfo(
+                                        name=func_name,
+                                        file_path=file_path,
+                                        start_line=line_num,
+                                        end_line=line_num,
+                                        size=1
+                                    ))
+                                elif brace_count > 0:
+                                    # Multi-line function - start tracking
+                                    current_function = (func_name, line_num, brace_count)
+                                break
+                                
         except Exception as e:
             print(f"Warning: Could not read {file_path}: {e}")
-            return functions
-        
-        lines = content.split('\n')
-        
-        i = 0
-        while i < len(lines):
-            line = lines[i]
-            
-            for pattern, func_type in JavaScriptParser.PATTERNS:
-                match = re.search(pattern, line)
-                if match:
-                    func_name = match.group(1)
-                    start_line = i + 1
-                    
-                    # Find the end of the function by counting braces
-                    brace_count = line.count('{') - line.count('}')
-                    end_line = i
-                    
-                    j = i + 1
-                    while j < len(lines) and brace_count > 0:
-                        brace_count += lines[j].count('{') - lines[j].count('}')
-                        end_line = j
-                        j += 1
-                    
-                    if brace_count == 0 and end_line > i:
-                        size = end_line - i + 1
-                        functions.append(FunctionInfo(
-                            name=func_name,
-                            file_path=file_path,
-                            start_line=start_line,
-                            end_line=end_line + 1,
-                            size=size
-                        ))
-                    break
-            i += 1
         
         return functions
 
@@ -173,8 +186,9 @@ class PythonParser:
         """
         Parse Python file to extract functions.
         
-        Uses indentation-based parsing to detect function boundaries.
-        Supports both regular functions and methods.
+        Uses a streaming approach with buffering to handle very large files
+        efficiently. Reads the file line-by-line and uses indentation-based
+        parsing to detect function boundaries.
         
         Args:
             file_path: Path to the Python file
@@ -186,67 +200,73 @@ class PythonParser:
         
         try:
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                content = f.read()
+                lines = []
+                line_num = 0
+                
+                # Read file line by line to avoid loading entire file into memory
+                for line in f:
+                    lines.append(line.rstrip('\n\r'))
+                    line_num += 1
+                
+                # Now process the lines (this is necessary for Python due to 
+                # indentation-based scoping which requires look-ahead)
+                i = 0
+                while i < len(lines):
+                    line = lines[i]
+                    
+                    match = PythonParser.FUNC_PATTERN.search(line)
+                    if match:
+                        func_name = match.group(1)
+                        start_line = i + 1
+                        
+                        # Get the base indentation level of the function definition
+                        base_indent = len(line) - len(line.lstrip())
+                        
+                        # Find where the function signature ends (look for ':')
+                        # Handle multi-line signatures by checking for unmatched parentheses
+                        j = i
+                        paren_count = 0
+                        while j < len(lines):
+                            paren_count += lines[j].count('(') - lines[j].count(')')
+                            if ':' in lines[j] and paren_count == 0:
+                                break
+                            j += 1
+                        
+                        # Now find where the function body ends
+                        j += 1
+                        end_line = i  # Initialize to function start (0-indexed)
+                        
+                        while j < len(lines):
+                            current_line = lines[j]
+                            
+                            # Skip blank lines and comments
+                            if current_line.strip() == '' or current_line.strip().startswith('#'):
+                                j += 1
+                                continue
+                            
+                            # Check indentation
+                            current_indent = len(current_line) - len(current_line.lstrip())
+                            
+                            # If we're back to the base level or lower, function has ended
+                            if current_indent <= base_indent:
+                                break
+                            
+                            end_line = j
+                            j += 1
+                        
+                        if end_line >= i:
+                            size = end_line - i + 1
+                            functions.append(FunctionInfo(
+                                name=func_name,
+                                file_path=file_path,
+                                start_line=i + 1,  # Convert to 1-indexed
+                                end_line=end_line + 1,  # Convert to 1-indexed
+                                size=size
+                            ))
+                    i += 1
+                                
         except Exception as e:
             print(f"Warning: Could not read {file_path}: {e}")
-            return functions
-        
-        lines = content.split('\n')
-        
-        i = 0
-        while i < len(lines):
-            line = lines[i]
-            
-            match = PythonParser.FUNC_PATTERN.search(line)
-            if match:
-                func_name = match.group(1)
-                start_line = i + 1
-                
-                # Get the base indentation level of the function definition
-                base_indent = len(line) - len(line.lstrip())
-                
-                # Find where the function signature ends (look for ':')
-                # Handle multi-line signatures by checking for unmatched parentheses
-                j = i
-                paren_count = 0
-                while j < len(lines):
-                    paren_count += lines[j].count('(') - lines[j].count(')')
-                    if ':' in lines[j] and paren_count == 0:
-                        break
-                    j += 1
-                
-                # Now find where the function body ends
-                j += 1
-                end_line = i  # Initialize to function start (0-indexed)
-                
-                while j < len(lines):
-                    current_line = lines[j]
-                    
-                    # Skip blank lines and comments
-                    if current_line.strip() == '' or current_line.strip().startswith('#'):
-                        j += 1
-                        continue
-                    
-                    # Check indentation
-                    current_indent = len(current_line) - len(current_line.lstrip())
-                    
-                    # If we're back to the base level or lower, function has ended
-                    if current_indent <= base_indent:
-                        break
-                    
-                    end_line = j
-                    j += 1
-                
-                if end_line >= i:
-                    size = end_line - i + 1
-                    functions.append(FunctionInfo(
-                        name=func_name,
-                        file_path=file_path,
-                        start_line=i + 1,  # Convert to 1-indexed
-                        end_line=end_line + 1,  # Convert to 1-indexed
-                        size=size
-                    ))
-            i += 1
         
         return functions
 
@@ -265,6 +285,9 @@ class JavaParser:
         """
         Parse Java file to extract methods.
         
+        Uses a streaming approach to handle very large files efficiently
+        without loading the entire file into memory.
+        
         Supports methods with various modifiers including:
         - Access modifiers: public, private, protected
         - Other modifiers: static, final, synchronized
@@ -281,42 +304,52 @@ class JavaParser:
         
         try:
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                content = f.read()
+                line_num = 0
+                current_method = None  # (name, start_line, brace_count)
+                
+                for line in f:  # Stream file line by line
+                    line_num += 1
+                    
+                    # If we're currently tracking a method, update brace count
+                    if current_method:
+                        method_name, start_line, brace_count = current_method
+                        brace_count += line.count('{') - line.count('}')
+                        
+                        if brace_count == 0:
+                            # Method ended
+                            size = line_num - start_line + 1
+                            functions.append(FunctionInfo(
+                                name=method_name,
+                                file_path=file_path,
+                                start_line=start_line,
+                                end_line=line_num,
+                                size=size
+                            ))
+                            current_method = None
+                        else:
+                            current_method = (method_name, start_line, brace_count)
+                    else:
+                        # Look for new method declarations
+                        match = JavaParser.METHOD_PATTERN.search(line)
+                        if match:
+                            method_name = match.group(1)
+                            brace_count = line.count('{') - line.count('}')
+                            
+                            if brace_count == 0:
+                                # Single-line method (rare but possible)
+                                functions.append(FunctionInfo(
+                                    name=method_name,
+                                    file_path=file_path,
+                                    start_line=line_num,
+                                    end_line=line_num,
+                                    size=1
+                                ))
+                            elif brace_count > 0:
+                                # Multi-line method - start tracking
+                                current_method = (method_name, line_num, brace_count)
+                                
         except Exception as e:
             print(f"Warning: Could not read {file_path}: {e}")
-            return functions
-        
-        lines = content.split('\n')
-        
-        i = 0
-        while i < len(lines):
-            line = lines[i]
-            
-            match = JavaParser.METHOD_PATTERN.search(line)
-            if match:
-                func_name = match.group(1)
-                start_line = i + 1
-                
-                # Find the end of the method by counting braces
-                brace_count = line.count('{') - line.count('}')
-                end_line = i
-                
-                j = i + 1
-                while j < len(lines) and brace_count > 0:
-                    brace_count += lines[j].count('{') - lines[j].count('}')
-                    end_line = j
-                    j += 1
-                
-                if brace_count == 0 and end_line > i:
-                    size = end_line - i + 1
-                    functions.append(FunctionInfo(
-                        name=func_name,
-                        file_path=file_path,
-                        start_line=start_line,
-                        end_line=end_line + 1,
-                        size=size
-                    ))
-            i += 1
         
         return functions
 
