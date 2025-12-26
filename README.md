@@ -1,16 +1,19 @@
 # Function Size Calculator
 
-A Python tool that scans git repositories to find the largest functions in Java and Node.js codebases. The results are exported to an Excel (XLSX) file with each repository on a separate tab.
+A Python tool that scans git repositories to find the largest functions in Java, Node.js, and Python codebases. The results are exported to an Excel (XLSX) file with each repository on a separate tab.
 
 ## Features
 
 - Scans multiple git repositories (local or remote)
 - **Parallel processing** for efficient scanning of multiple repositories
-- Supports Node.js (JavaScript, TypeScript) and Java
-- Finds the 5 largest functions in each repository
+- Supports Node.js (JavaScript, TypeScript), Java, and **Python**
+- **Configurable number of top functions** to report (default: 5)
+- **Minimum function size filter** to exclude trivial functions
+- **Summary statistics** for each repository
 - Exports results to Excel format with:
   - Each repository on a separate tab
   - Function name, file path, line numbers, and size
+  - Summary statistics (total functions, average size, largest/smallest)
   - Formatted headers and auto-sized columns
 - Automatic cleanup of temporary cloned repositories
 
@@ -122,12 +125,29 @@ python function_size_calculator.py -i repos.txt https://github.com/user/extra-re
 python function_size_calculator.py -i repos.txt -j 8  # Use 8 parallel jobs
 ```
 
+8. Report top 10 functions instead of default 5:
+```bash
+python function_size_calculator.py -i repos.txt -n 10
+```
+
+9. Filter out small functions (e.g., exclude functions smaller than 10 lines):
+```bash
+python function_size_calculator.py -i repos.txt -m 10
+```
+
+10. Combine multiple options:
+```bash
+python function_size_calculator.py -i repos.txt -n 20 -m 5 -j 8 -o detailed_analysis.xlsx
+```
+
 ### Command-Line Options
 
 - `repositories`: One or more git repository URLs or local paths (optional if using -i)
 - `-i`, `--input-file`: File containing list of repository URLs/paths (one per line, comments with # are supported)
 - `-o`, `--output`: Output Excel file name (default: `function_sizes.xlsx`)
 - `-j`, `--jobs`: Number of parallel jobs for scanning repositories (default: 4)
+- `-n`, `--top-n`: Number of top largest functions to report per repository (default: 5)
+- `-m`, `--min-size`: Minimum function size in lines to include (default: 1)
 - `-h`, `--help`: Show help message
 
 ## Output Format
@@ -136,12 +156,17 @@ The tool generates an Excel file with the following structure:
 
 - **Each repository gets its own tab** named after the repository
 - **Columns in each tab:**
-  - Rank: Position in top 5 (1-5)
+  - Rank: Position in top N (1-N based on --top-n parameter)
   - Function Name: Name of the function/method
   - File Path: Relative path to the file containing the function
   - Start Line: Line number where the function starts
   - End Line: Line number where the function ends
   - Lines of Code: Total lines in the function
+- **Summary Statistics:**
+  - Total Functions Found
+  - Average Function Size
+  - Largest Function
+  - Smallest Function
 
 ## Supported Languages
 
@@ -156,16 +181,24 @@ The tool generates an Excel file with the following structure:
 - Methods with various modifiers: `public static void method() {}`
 - Supports: `.java` files
 
+### Python
+- Function definitions: `def function_name():`
+- Async functions: `async def function_name():`
+- Class methods: `def method(self):`
+- Static and class methods
+- Supports: `.py` files
+
 ## How It Works
 
 1. **Repository Access**: Clones remote repositories to temporary directories or uses local paths
 2. **Parallel Processing**: Scans multiple repositories concurrently for improved performance
-3. **File Discovery**: Recursively finds all relevant source files (skips `node_modules`, `.git`, `target`, etc.)
-4. **Function Parsing**: Uses regex patterns to identify function/method declarations
-5. **Size Calculation**: Counts lines by tracking brace pairs `{}`
-6. **Ranking**: Sorts functions by line count and selects top 5 per repository
-7. **Export**: Creates formatted Excel file with results
-8. **Cleanup**: Automatically removes temporary cloned repositories
+3. **File Discovery**: Recursively finds all relevant source files (skips `node_modules`, `.git`, `target`, `__pycache__`, etc.)
+4. **Function Parsing**: Uses regex patterns and indentation-based parsing to identify function/method declarations
+5. **Size Calculation**: Counts lines by tracking brace pairs `{}` (JavaScript/Java) or indentation (Python)
+6. **Filtering**: Applies minimum size filter to exclude trivial functions
+7. **Ranking**: Sorts functions by line count and selects top N per repository
+8. **Export**: Creates formatted Excel file with results and summary statistics
+9. **Cleanup**: Automatically removes temporary cloned repositories
 
 ## Limitations
 
@@ -173,6 +206,14 @@ The tool generates an Excel file with the following structure:
 - Nested functions are counted separately
 - Very complex or unconventional syntax may not be detected
 - Excludes common dependency directories (node_modules, target, build, etc.)
+
+## Performance
+
+The tool is optimized for scanning large codebases:
+- **Parallel processing** scans multiple repositories concurrently
+- **Efficient path filtering** uses Path.parts for accurate directory exclusion
+- **Progress reporting** provides real-time feedback during scans
+- Successfully tested on repositories with thousands of functions
 
 ## License
 
