@@ -217,7 +217,7 @@ def scan_single_repository(repo_path: str) -> Tuple[str, List[FunctionInfo]]:
             all_functions.extend(functions)
         
         # Get repository name
-        repo_name = repo_path.split('/')[-1].replace('.git', '')
+        repo_name = os.path.basename(repo_path.rstrip('/').replace('.git', ''))
         if not repo_name:
             repo_name = 'repository'
         
@@ -314,6 +314,11 @@ def main():
     )
     
     args = parser.parse_args()
+    
+    # Validate jobs parameter
+    if args.jobs < 1:
+        print("Error: Number of parallel jobs must be at least 1")
+        sys.exit(1)
     
     # Collect repositories from command line and/or input file
     repositories = list(args.repositories) if args.repositories else []
