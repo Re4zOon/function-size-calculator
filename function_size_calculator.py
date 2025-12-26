@@ -170,13 +170,19 @@ class PythonParser:
                 base_indent = len(line) - len(line.lstrip())
                 
                 # Find where the function signature ends (look for ':')
+                # Handle multi-line signatures by checking for unmatched parentheses
                 j = i
-                while j < len(lines) and ':' not in lines[j]:
+                paren_count = line.count('(') - line.count(')')
+                while j < len(lines):
+                    if ':' in lines[j] and paren_count == 0:
+                        break
                     j += 1
+                    if j < len(lines):
+                        paren_count += lines[j].count('(') - lines[j].count(')')
                 
                 # Now find where the function body ends
                 j += 1
-                end_line = j - 1
+                end_line = i  # Initialize to function start
                 
                 while j < len(lines):
                     current_line = lines[j]

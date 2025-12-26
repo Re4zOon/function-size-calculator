@@ -249,6 +249,34 @@ class TestPythonParser(unittest.TestCase):
         # large_function should be larger
         self.assertGreater(large.size, simple.size)
     
+    def test_multiline_signature(self):
+        """Test that functions with multi-line signatures are parsed correctly."""
+        # Create a temporary file with a multi-line function signature
+        temp_file = os.path.join(self.fixtures_dir, 'temp_multiline.py')
+        try:
+            with open(temp_file, 'w') as f:
+                f.write("""def multi_line_func(
+    arg1: str,
+    arg2: int,
+    arg3: dict
+) -> bool:
+    x = 1
+    y = 2
+    return True
+""")
+            
+            functions = PythonParser.parse_functions(temp_file)
+            
+            # Should find the function
+            self.assertEqual(len(functions), 1)
+            self.assertEqual(functions[0].name, "multi_line_func")
+            
+            # Should have correct size (8 lines total)
+            self.assertEqual(functions[0].size, 8)
+        finally:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+    
     def test_parse_nonexistent_python_file(self):
         """Test parsing a Python file that doesn't exist."""
         # Suppress expected warning output
