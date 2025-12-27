@@ -255,7 +255,7 @@ To use JSON format, either:
 2. **Parallel Processing**: Scans multiple repositories concurrently for improved performance
 3. **File Discovery**: Recursively finds all relevant source files (skips `node_modules`, `.git`, `target`, `build`, etc.)
 4. **Test File Exclusion**: Automatically excludes test files to focus on production code
-   - **Java**: Excludes files ending with `Test.java`, `Tests.java`, or starting with `Test`
+   - **Java**: Excludes files ending with `Test.java` or `Tests.java`
    - **JavaScript/TypeScript**: Excludes files with `.test.` or `.spec.` in their name
    - **All languages**: Excludes files in `test`, `tests`, `__tests__`, `spec`, or `specs` directories
 5. **Function Parsing**: Uses streaming parsers with regex patterns and brace-tracking to identify function/method declarations

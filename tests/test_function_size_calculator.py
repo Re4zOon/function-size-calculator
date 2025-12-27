@@ -553,16 +553,13 @@ class TestIsTestFile:
         assert is_test_file(Path("/src/main/java/SampleTests.java")) is True
         assert is_test_file(Path("/src/main/java/UserTests.java")) is True
 
-    def test_java_test_file_with_test_prefix(self):
-        """Should identify Java files starting with Test as test files."""
-        assert is_test_file(Path("/src/main/java/TestSample.java")) is True
-        assert is_test_file(Path("/src/main/java/TestUser.java")) is True
-
     def test_java_non_test_file(self):
         """Should not identify regular Java files as test files."""
         assert is_test_file(Path("/src/main/java/Sample.java")) is False
         assert is_test_file(Path("/src/main/java/User.java")) is False
-        assert is_test_file(Path("/src/main/java/TestUtils.java")) is True  # Still starts with Test
+        # TestUtils.java should NOT be identified as a test file (avoids false positives)
+        assert is_test_file(Path("/src/main/java/TestUtils.java")) is False
+        assert is_test_file(Path("/src/main/java/TestConstants.java")) is False
 
     def test_javascript_test_file_with_test_extension(self):
         """Should identify JS/TS files with .test. pattern as test files."""

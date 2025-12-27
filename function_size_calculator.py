@@ -278,10 +278,10 @@ def is_test_file(file_path: Path) -> bool:
     
     # Check Java test patterns
     if filename.endswith('.java'):
-        # Common Java test patterns: *Test.java, *Tests.java, Test*.java
-        if (filename.endswith('Test.java') or 
-            filename.endswith('Tests.java') or 
-            filename.startswith('Test')):
+        # Common Java test patterns: *Test.java, *Tests.java
+        # Note: We avoid Test*.java prefix pattern to prevent false positives
+        # for utility classes like TestUtils.java or TestConstants.java
+        if filename.endswith('Test.java') or filename.endswith('Tests.java'):
             return True
     
     # Check JavaScript/TypeScript test patterns
