@@ -99,7 +99,7 @@ def main():
     test_info = parse_test_output(test_output)
 
     # Generate timestamp
-    timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
 
     # Generate test summary table
     summary_table = generate_test_summary_table(test_info)

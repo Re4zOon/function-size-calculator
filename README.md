@@ -38,7 +38,7 @@ pip install -r requirements.txt
 
 ## Requirements
 
-- Python 3.6 or higher
+- Python 3.14 or higher
 - Git (for cloning remote repositories)
 - openpyxl (automatically installed from requirements.txt)
 
