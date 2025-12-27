@@ -255,54 +255,6 @@ To use JSON format, either:
 8. **Export**: Creates formatted Excel or JSON file with results and summary statistics
 9. **Cleanup**: Automatically removes temporary cloned repositories
 
-## Output Formats
-
-### Excel (XLSX)
-The default output format. Generates an Excel file with the following structure:
-
-- **Each repository gets its own tab** named after the repository
-- **Columns in each tab:**
-  - Rank: Position in top N (1-N based on --top-n parameter)
-  - Function Name: Name of the function/method
-  - File Path: Relative path to the file containing the function
-  - Start Line: Line number where the function starts
-  - End Line: Line number where the function ends
-  - Lines of Code: Total lines in the function
-- **Summary Statistics:**
-  - Total Functions Found
-  - Average Function Size
-  - Largest Function
-  - Smallest Function
-
-### JSON
-An alternative output format for programmatic consumption. Structure:
-
-```json
-{
-  "repository-name": {
-    "summary": {
-      "total_functions": 100,
-      "average_size": 15.5,
-      "largest_function_size": 250,
-      "smallest_function_size": 3
-    },
-    "top_functions": [
-      {
-        "name": "functionName",
-        "file_path": "path/to/file.js",
-        "start_line": 10,
-        "end_line": 50,
-        "size": 41
-      }
-    ]
-  }
-}
-```
-
-To use JSON format, either:
-- Use the `.json` extension: `-o results.json`
-- Explicitly specify format: `-f json -o results.json`
-
 ## Limitations
 
 - Function size is measured by line count (including braces and blank lines)
@@ -310,7 +262,7 @@ To use JSON format, either:
 - Very complex or unconventional syntax may not be detected
 - Excludes common dependency directories (node_modules, target, build, etc.)
 
-## Performance
+## License
 
 This project is open source and available under the MIT License.
 
