@@ -213,6 +213,55 @@ class TestCSharpParser:
 
         assert len(functions) == 0
 
+    def test_csharp_method_with_brace_on_same_line(self, tmp_path: Path):
+        """Test that methods with opening brace on same line are detected."""
+        temp_file = tmp_path / "temp_brace.cs"
+        temp_file.write_text(
+            """public class Test
+{
+    public void MethodWithBraceOnSameLine() {
+        Console.WriteLine("test");
+    }
+    
+    public void NormalMethod()
+    {
+        Console.WriteLine("normal");
+    }
+}
+"""
+        )
+        
+        functions = CSharpParser.parse_functions(str(temp_file))
+        func_names = [f.name for f in functions]
+        
+        assert len(functions) == 2
+        assert "MethodWithBraceOnSameLine" in func_names
+        assert "NormalMethod" in func_names
+
+    def test_csharp_pending_method_discarded_on_new_declaration(self, tmp_path: Path):
+        """Test that a pending method is discarded when a new method declaration is found."""
+        temp_file = tmp_path / "temp_pending.cs"
+        temp_file.write_text(
+            """public class Test
+{
+    public void MethodWithNoBrace()
+    
+    public void AnotherMethod()
+    {
+        Console.WriteLine("test");
+    }
+}
+"""
+        )
+        
+        functions = CSharpParser.parse_functions(str(temp_file))
+        
+        # Only AnotherMethod should be detected since MethodWithNoBrace has no body
+        assert len(functions) == 1
+        assert functions[0].name == "AnotherMethod"
+        assert functions[0].start_line == 5
+        assert functions[0].end_line == 8
+
 
 class TestPythonParser:
     """Tests for PythonParser."""
