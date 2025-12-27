@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Function Size Calculator
-Scans git repositories to find the largest functions in Node.js, Java, and Python codebases.
+Scans git repositories to find the largest functions in Node.js and Java codebases.
 Outputs results to an Excel (XLSX) file with each repository on a separate tab.
 """
 
@@ -175,104 +175,6 @@ class JavaScriptParser:
         return functions
 
 
-class PythonParser:
-    """Parser for Python functions."""
-    
-    # Compile regex pattern once for better performance
-    FUNC_PATTERN = re.compile(r'^\s*(?:async\s+)?def\s+(\w+)\s*\(')
-    
-    @staticmethod
-    def parse_functions(file_path: str) -> List[FunctionInfo]:
-        """
-        Parse Python file to extract functions.
-        
-        Note: Due to Python's indentation-based syntax requiring lookahead
-        to determine function boundaries, this parser reads all lines into
-        memory. For extremely large Python files (100MB+), this may cause
-        memory pressure. However, such large single-file Python modules are
-        rare in practice.
-        
-        Args:
-            file_path: Path to the Python file
-            
-        Returns:
-            List of FunctionInfo objects for all detected functions
-        """
-        functions = []
-        
-        try:
-            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                lines = []
-                line_num = 0
-                
-                # Read file line by line to avoid loading entire file into memory
-                for line in f:
-                    lines.append(line.rstrip('\n\r'))
-                    line_num += 1
-                
-                # Now process the lines (this is necessary for Python due to 
-                # indentation-based scoping which requires look-ahead)
-                i = 0
-                while i < len(lines):
-                    line = lines[i]
-                    
-                    match = PythonParser.FUNC_PATTERN.search(line)
-                    if match:
-                        func_name = match.group(1)
-                        start_line = i + 1
-                        
-                        # Get the base indentation level of the function definition
-                        base_indent = len(line) - len(line.lstrip())
-                        
-                        # Find where the function signature ends (look for ':')
-                        # Handle multi-line signatures by checking for unmatched parentheses
-                        j = i
-                        paren_count = 0
-                        while j < len(lines):
-                            paren_count += lines[j].count('(') - lines[j].count(')')
-                            if ':' in lines[j] and paren_count == 0:
-                                break
-                            j += 1
-                        
-                        # Now find where the function body ends
-                        j += 1
-                        end_line = i  # Initialize to function start (0-indexed)
-                        
-                        while j < len(lines):
-                            current_line = lines[j]
-                            
-                            # Skip blank lines and comments
-                            if current_line.strip() == '' or current_line.strip().startswith('#'):
-                                j += 1
-                                continue
-                            
-                            # Check indentation
-                            current_indent = len(current_line) - len(current_line.lstrip())
-                            
-                            # If we're back to the base level or lower, function has ended
-                            if current_indent <= base_indent:
-                                break
-                            
-                            end_line = j
-                            j += 1
-                        
-                        if end_line >= i:
-                            size = end_line - i + 1
-                            functions.append(FunctionInfo(
-                                name=func_name,
-                                file_path=file_path,
-                                start_line=i + 1,  # Convert to 1-indexed
-                                end_line=end_line + 1,  # Convert to 1-indexed
-                                size=size
-                            ))
-                    i += 1
-                                
-        except Exception as e:
-            print(f"Warning: Could not read {file_path}: {e}")
-        
-        return functions
-
-
 class JavaParser:
     """Parser for Java functions/methods."""
     
@@ -356,105 +258,6 @@ class JavaParser:
         return functions
 
 
-class CSharpParser:
-    """Parser for C# methods."""
-    
-    # Compile regex pattern once for better performance
-    # C# methods can have opening brace on same line or next line
-    METHOD_PATTERN = re.compile(
-        r'^\s*(?:public|private|protected|internal)?\s*(?:static)?\s*(?:virtual|override|abstract|sealed|async)?\s*'
-        r'[\w<>\[\]?]+\s+(\w+)\s*\([^)]*\)\s*\{?\s*$'
-    )
-    
-    @staticmethod
-    def parse_functions(file_path: str) -> List[FunctionInfo]:
-        """
-        Parse C# file to extract methods.
-        
-        Uses a streaming approach to handle very large files efficiently
-        without loading the entire file into memory.
-        
-        Supports methods with various modifiers including:
-        - Access modifiers: public, private, protected, internal
-        - Other modifiers: static, virtual, override, abstract, sealed, async
-        - Generic return types and constraints
-        
-        Args:
-            file_path: Path to the C# file
-            
-        Returns:
-            List of FunctionInfo objects for all detected methods
-        """
-        functions = []
-        
-        try:
-            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                line_num = 0
-                current_method = None  # (name, start_line, brace_count)
-                pending_method = None  # (name, start_line) waiting for opening brace
-                
-                for line in f:  # Stream file line by line
-                    line_num += 1
-                    stripped = line.strip()
-                    
-                    # If we're currently tracking a method, update brace count
-                    if current_method:
-                        method_name, start_line, brace_count = current_method
-                        brace_count += line.count('{') - line.count('}')
-                        
-                        if brace_count == 0:
-                            # Method ended
-                            size = line_num - start_line + 1
-                            functions.append(FunctionInfo(
-                                name=method_name,
-                                file_path=file_path,
-                                start_line=start_line,
-                                end_line=line_num,
-                                size=size
-                            ))
-                            current_method = None
-                        else:
-                            current_method = (method_name, start_line, brace_count)
-                    
-                    # Check if there's a pending method waiting for opening brace
-                    elif pending_method and stripped == '{':
-                        method_name, start_line = pending_method
-                        # Start tracking the method
-                        current_method = (method_name, start_line, 1)
-                        pending_method = None
-                    
-                    # Look for new method declarations
-                    else:
-                        match = CSharpParser.METHOD_PATTERN.search(line)
-                        if match:
-                            method_name = match.group(1)
-                            # Discard any pending method if we find a new declaration
-                            pending_method = None
-                            # Check if opening brace is on the same line
-                            if '{' in line:
-                                brace_count = line.count('{') - line.count('}')
-                                if brace_count == 0:
-                                    # Single-line method (rare)
-                                    functions.append(FunctionInfo(
-                                        name=method_name,
-                                        file_path=file_path,
-                                        start_line=line_num,
-                                        end_line=line_num,
-                                        size=1
-                                    ))
-                                else:
-                                    # Multi-line method - start tracking
-                                    current_method = (method_name, line_num, brace_count)
-                            else:
-                                # Waiting for opening brace on next line
-                                pending_method = (method_name, line_num)
-                                
-        except Exception as e:
-            print(f"Warning: Could not read {file_path}: {e}")
-        
-        return functions
-
-
 def scan_single_repository(repo_path: str) -> Tuple[str, List[FunctionInfo]]:
     """
     Scan a single repository and return results.
@@ -471,8 +274,7 @@ def scan_single_repository(repo_path: str) -> Tuple[str, List[FunctionInfo]]:
     # Common directories to skip - using sets for O(1) lookup
     SKIP_DIRS = {
         'node_modules', '.git', 'target', 'build', 'out', 
-        '__pycache__', 'venv', 'env', '.venv', 'site-packages',
-        'dist', 'coverage', '.tox', '.pytest_cache', '.mypy_cache'
+        'dist', 'coverage'
     }
     
     temp_dir = None
@@ -529,30 +331,6 @@ def scan_single_repository(repo_path: str) -> Tuple[str, List[FunctionInfo]]:
                 continue
             
             functions = JavaParser.parse_functions(str(file_path))
-            # Make paths relative to repo root
-            for func in functions:
-                func.file_path = os.path.relpath(func.file_path, local_path)
-            all_functions.extend(functions)
-        
-        # Find all Python files
-        for file_path in Path(local_path).rglob('*.py'):
-            # Skip common directories and virtual environments using set lookup
-            if any(part in SKIP_DIRS for part in file_path.parts):
-                continue
-            
-            functions = PythonParser.parse_functions(str(file_path))
-            # Make paths relative to repo root
-            for func in functions:
-                func.file_path = os.path.relpath(func.file_path, local_path)
-            all_functions.extend(functions)
-        
-        # Find all C# files
-        for file_path in Path(local_path).rglob('*.cs'):
-            # Skip common build directories using set lookup
-            if any(part in SKIP_DIRS for part in file_path.parts):
-                continue
-            
-            functions = CSharpParser.parse_functions(str(file_path))
             # Make paths relative to repo root
             for func in functions:
                 func.file_path = os.path.relpath(func.file_path, local_path)
@@ -721,7 +499,7 @@ class JSONWriter:
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description='Find the largest functions in git repositories (Node.js, Java, and Python)'
+        description='Find the largest functions in git repositories (Node.js and Java)'
     )
     parser.add_argument(
         'repositories',
