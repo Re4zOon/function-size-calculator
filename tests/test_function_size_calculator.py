@@ -14,11 +14,12 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from function_size_calculator import (
-    FunctionInfo,
-    JavaScriptParser,
-    JavaParser,
     ExcelWriter,
+    FunctionInfo,
+    JavaParser,
+    JavaScriptParser,
     JSONWriter,
+    print_progress_bar,
     scan_single_repository,
 )
 
@@ -463,7 +464,7 @@ class TestCommandLineArguments:
         )
 
         repositories = []
-        with open(input_file, "r", encoding="utf-8") as file_handle:
+        with open(input_file, encoding="utf-8") as file_handle:
             for line in file_handle:
                 line = line.strip()
                 if line and not line.startswith("#"):
@@ -472,3 +473,67 @@ class TestCommandLineArguments:
         assert len(repositories) == 2
         assert "https://github.com/user/repo1.git" in repositories
         assert "/path/to/local/repo" in repositories
+
+
+class TestProgressBar:
+    """Tests for print_progress_bar function."""
+
+    def test_progress_bar_zero_total(self, capsys):
+        """Progress bar should handle zero total gracefully."""
+        print_progress_bar(0, 0, prefix="Test:", suffix="Done")
+        captured = capsys.readouterr()
+        # Should return early without printing
+        assert captured.out == ""
+
+    def test_progress_bar_partial_progress(self, capsys):
+        """Progress bar should show partial progress."""
+        print_progress_bar(5, 10, prefix="Progress:", suffix="Done")
+        captured = capsys.readouterr()
+        assert "50.0%" in captured.out
+        assert "Progress:" in captured.out
+
+    def test_progress_bar_complete(self, capsys):
+        """Progress bar should print newline when complete."""
+        print_progress_bar(10, 10, prefix="Progress:", suffix="Done")
+        captured = capsys.readouterr()
+        assert "100.0%" in captured.out
+        # Should end with newline when complete
+        assert captured.out.endswith("\n")
+
+
+class TestEmptyResults:
+    """Tests for handling empty results scenarios."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, tmp_path: Path):
+        self.output_file = tmp_path / "test_output"
+
+    @pytest.mark.skipif(openpyxl is None, reason="openpyxl not available")
+    def test_write_empty_repo_excel(self):
+        """ExcelWriter should handle empty function list."""
+        repo_results = {"empty-repo": []}
+        output_file = str(self.output_file) + ".xlsx"
+
+        with redirect_stdout(StringIO()):
+            ExcelWriter.write_results(repo_results, output_file)
+
+        assert Path(output_file).exists()
+        wb = openpyxl.load_workbook(output_file)
+        ws = wb["empty-repo"]
+        # Should still have header
+        assert ws.cell(1, 1).value == "Rank"
+        wb.close()
+
+    def test_write_empty_repo_json(self):
+        """JSONWriter should handle empty function list."""
+        repo_results = {"empty-repo": []}
+        output_file = str(self.output_file) + ".json"
+
+        with redirect_stdout(StringIO()):
+            JSONWriter.write_results(repo_results, output_file)
+
+        assert Path(output_file).exists()
+        data = json.loads(Path(output_file).read_text())
+        assert "empty-repo" in data
+        assert data["empty-repo"]["summary"] == {}
+        assert data["empty-repo"]["top_functions"] == []
