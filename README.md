@@ -255,21 +255,21 @@ To use JSON format, either:
 
 | Test Category | Tests | Status |
 |--------------|-------|--------|
-| **FunctionInfo** | 3 | ✅ All Passed |
-| **JavaScript/TypeScript Parser** | 5 | ✅ All Passed |
-| **Java Parser** | 4 | ✅ All Passed |
-| **Excel Writer** | 6 | ✅ All Passed |
-| **JSON Writer** | 5 | ✅ All Passed |
-| **Repository Scanner** | 3 | ✅ All Passed |
 | **Command-Line Arguments** | 1 | ✅ All Passed |
+| **Excel Writer** | 6 | ✅ All Passed |
+| **FunctionInfo** | 3 | ✅ All Passed |
+| **JSON Writer** | 5 | ✅ All Passed |
+| **Java Parser** | 4 | ✅ All Passed |
+| **JavaScript/TypeScript Parser** | 5 | ✅ All Passed |
+| **Repository Scanner** | 3 | ✅ All Passed |
 | **Total** | **27** | **✅ 27 Passed** |
 
 ### Performance
 
-- **Execution Time**: 0.36 seconds
-- **Platform**: Linux, Python 3.12.12, pytest 9.0.2
+- **Execution Time**: 0.23 seconds
+- **Platform**: Linux, Python 3.12.3, pytest 9.0.2
 
-*Last updated: 2025-12-27 04:34:03 UTC*
+*Last updated: 2025-12-27 04:39:09 UTC*
 ## License
 
 This project is open source and available under the MIT License.
