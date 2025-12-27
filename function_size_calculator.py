@@ -258,6 +258,41 @@ class JavaParser:
         return functions
 
 
+def is_test_file(file_path: Path) -> bool:
+    """
+    Determine if a file is a test file based on common naming patterns.
+
+    Args:
+        file_path: Path object representing the file to check
+
+    Returns:
+        True if the file appears to be a test file, False otherwise
+    """
+    filename = file_path.name
+    parts = file_path.parts
+    
+    # Check if in test-related directories
+    test_dirs = {'test', 'tests', '__tests__', 'spec', 'specs'}
+    if any(part.lower() in test_dirs for part in parts):
+        return True
+    
+    # Check Java test patterns
+    if filename.endswith('.java'):
+        # Common Java test patterns: *Test.java, *Tests.java, Test*.java
+        if (filename.endswith('Test.java') or 
+            filename.endswith('Tests.java') or 
+            filename.startswith('Test')):
+            return True
+    
+    # Check JavaScript/TypeScript test patterns
+    # Patterns: *.test.js, *.spec.js, *.test.ts, *.spec.ts, etc.
+    test_patterns = ['.test.', '.spec.']
+    if any(pattern in filename for pattern in test_patterns):
+        return True
+    
+    return False
+
+
 def scan_single_repository(repo_path: str) -> Tuple[str, List[FunctionInfo]]:
     """
     Scan a single repository and return results.
@@ -317,6 +352,10 @@ def scan_single_repository(repo_path: str) -> Tuple[str, List[FunctionInfo]]:
                 # Skip common directories using set lookup
                 if any(part in SKIP_DIRS for part in file_path.parts):
                     continue
+                
+                # Skip test files
+                if is_test_file(file_path):
+                    continue
 
                 functions = JavaScriptParser.parse_functions(str(file_path))
                 # Make paths relative to repo root
@@ -328,6 +367,10 @@ def scan_single_repository(repo_path: str) -> Tuple[str, List[FunctionInfo]]:
         for file_path in Path(local_path).rglob('*.java'):
             # Skip common build directories using set lookup
             if any(part in SKIP_DIRS for part in file_path.parts):
+                continue
+            
+            # Skip test files
+            if is_test_file(file_path):
                 continue
 
             functions = JavaParser.parse_functions(str(file_path))
