@@ -258,22 +258,41 @@ class JavaParser:
         return functions
 
 
+# Constants for test file detection
+_TEST_DIRS = {'test', 'tests', '__tests__', 'spec', 'specs'}
+_JS_TEST_PATTERNS = ('.test.', '.spec.')
+
+
 def is_test_file(file_path: Path) -> bool:
     """
     Determine if a file is a test file based on common naming patterns.
+
+    Identifies test files using the following patterns:
+    - Java: Files ending with 'Test.java' or 'Tests.java' (e.g., CalculatorTest.java)
+    - JavaScript/TypeScript: Files containing '.test.' or '.spec.' (e.g., app.test.js, component.spec.ts)
+    - All languages: Files in test directories (test, tests, __tests__, spec, specs) - case insensitive
 
     Args:
         file_path: Path object representing the file to check
 
     Returns:
         True if the file appears to be a test file, False otherwise
+
+    Examples:
+        >>> is_test_file(Path("src/CalculatorTest.java"))
+        True
+        >>> is_test_file(Path("src/Calculator.java"))
+        False
+        >>> is_test_file(Path("src/app.test.js"))
+        True
+        >>> is_test_file(Path("tests/helper.js"))
+        True
     """
     filename = file_path.name
     parts = file_path.parts
     
     # Check if in test-related directories
-    test_dirs = {'test', 'tests', '__tests__', 'spec', 'specs'}
-    if any(part.lower() in test_dirs for part in parts):
+    if any(part.lower() in _TEST_DIRS for part in parts):
         return True
     
     # Check Java test patterns
@@ -286,8 +305,7 @@ def is_test_file(file_path: Path) -> bool:
     
     # Check JavaScript/TypeScript test patterns
     # Patterns: *.test.js, *.spec.js, *.test.ts, *.spec.ts, etc.
-    test_patterns = ['.test.', '.spec.']
-    if any(pattern in filename for pattern in test_patterns):
+    if any(pattern in filename for pattern in _JS_TEST_PATTERNS):
         return True
     
     return False
