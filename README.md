@@ -24,12 +24,14 @@ A Python tool that scans git repositories to find the largest functions in Java 
 ## Installation
 
 1. Clone this repository:
+
 ```bash
 git clone https://github.com/Re4zOon/function-size-calculator.git
 cd function-size-calculator
 ```
 
-2. Install required dependencies:
+1. Install required dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -47,16 +49,19 @@ The repository includes a comprehensive test suite to ensure code quality and pr
 ### Running Tests
 
 Run all tests (pytest is configured for colorful, verbose output):
+
 ```bash
 pytest
 ```
 
 Run specific test class:
+
 ```bash
 pytest tests/test_function_size_calculator.py -k TestJavaScriptParser
 ```
 
 Run a specific test:
+
 ```bash
 pytest tests/test_function_size_calculator.py -k test_parse_javascript_file
 ```
@@ -64,6 +69,7 @@ pytest tests/test_function_size_calculator.py -k test_parse_javascript_file
 ### Test Coverage
 
 The test suite includes:
+
 - **Unit tests** for FunctionInfo class
 - **Parser tests** for JavaScript/TypeScript and Java parsers
 - **Excel writer tests** for output generation
@@ -85,21 +91,25 @@ python function_size_calculator.py <repository-path-or-url> [<repository-path-or
 ### Examples
 
 1. Scan a remote repository:
+
 ```bash
 python function_size_calculator.py https://github.com/user/repo.git
 ```
 
-2. Scan multiple repositories:
+1. Scan multiple repositories:
+
 ```bash
 python function_size_calculator.py https://github.com/user/repo1.git https://github.com/user/repo2.git
 ```
 
-3. Scan local repositories:
+1. Scan local repositories:
+
 ```bash
 python function_size_calculator.py /path/to/local/repo1 /path/to/local/repo2
 ```
 
-4. Scan repositories from an input file:
+1. Scan repositories from an input file:
+
 ```bash
 # Create a file with repository URLs (one per line)
 cat > repos.txt << EOF
@@ -114,42 +124,50 @@ EOF
 python function_size_calculator.py -i repos.txt
 ```
 
-5. Specify custom output file:
+1. Specify custom output file:
+
 ```bash
 python function_size_calculator.py -o my_results.xlsx https://github.com/user/repo.git
 ```
 
-6. Mix input file and command-line repositories:
+1. Mix input file and command-line repositories:
+
 ```bash
 python function_size_calculator.py -i repos.txt https://github.com/user/extra-repo.git
 ```
 
-7. Adjust parallel processing (default is 4 parallel jobs):
+1. Adjust parallel processing (default is 4 parallel jobs):
+
 ```bash
 python function_size_calculator.py -i repos.txt -j 8  # Use 8 parallel jobs
 ```
 
-8. Report top 10 functions instead of default 5:
+1. Report top 10 functions instead of default 5:
+
 ```bash
 python function_size_calculator.py -i repos.txt -n 10
 ```
 
-9. Filter out small functions (e.g., exclude functions smaller than 10 lines):
+1. Filter out small functions (e.g., exclude functions smaller than 10 lines):
+
 ```bash
 python function_size_calculator.py -i repos.txt -m 10
 ```
 
-10. Combine multiple options:
+1. Combine multiple options:
+
 ```bash
 python function_size_calculator.py -i repos.txt -n 20 -m 5 -j 8 -o detailed_analysis.xlsx
 ```
 
-11. Generate JSON output instead of Excel:
+1. Generate JSON output instead of Excel:
+
 ```bash
 python function_size_calculator.py -i repos.txt -o results.json
 ```
 
-12. Explicitly specify output format:
+1. Explicitly specify output format:
+
 ```bash
 python function_size_calculator.py -i repos.txt -f json -o results.json
 ```
@@ -168,6 +186,7 @@ python function_size_calculator.py -i repos.txt -f json -o results.json
 ## Output Formats
 
 ### Excel (XLSX)
+
 The default output format. Generates an Excel file with the following structure:
 
 - **Each repository gets its own tab** named after the repository
@@ -185,6 +204,7 @@ The default output format. Generates an Excel file with the following structure:
   - Smallest Function
 
 ### JSON
+
 An alternative output format for programmatic consumption. Structure:
 
 ```json
@@ -210,12 +230,14 @@ An alternative output format for programmatic consumption. Structure:
 ```
 
 To use JSON format, either:
+
 - Use the `.json` extension: `-o results.json`
 - Explicitly specify format: `-f json -o results.json`
 
 ## Supported Languages
 
 ### Node.js / JavaScript / TypeScript
+
 - Function declarations: `function name() {}`
 - Arrow functions: `const name = () => {}`
 - Methods: `name() {}`
@@ -223,6 +245,7 @@ To use JSON format, either:
 - Supports: `.js`, `.jsx`, `.ts`, `.tsx`, `.mjs` files
 
 ### Java
+
 - Methods with various modifiers: `public static void method() {}`
 - Supports: `.java` files
 
@@ -254,7 +277,7 @@ To use JSON format, either:
 ### Test Summary
 
 | Test Category | Tests | Status |
-|--------------|-------|--------|
+| -------------- | ------- | -------- |
 | **Command-Line Arguments** | 1 | ✅ All Passed |
 | **Excel Writer** | 6 | ✅ All Passed |
 | **FunctionInfo** | 3 | ✅ All Passed |
@@ -270,6 +293,7 @@ To use JSON format, either:
 - **Platform**: Linux, Python 3.12.3, pytest 9.0.2
 
 *Last updated: 2025-12-27 04:41:04 UTC*
+
 ## License
 
 This project is open source and available under the MIT License.
