@@ -258,6 +258,67 @@ class JavaParser:
         return functions
 
 
+# Constants for test file detection
+_TEST_DIRS = {'test', 'tests', '__tests__', 'spec', 'specs'}
+_JS_TEST_PATTERNS = ('.test.', '.spec.')
+
+
+def is_test_file(file_path: Path) -> bool:
+    """
+    Determine if a file is a test file based on directory structure and naming patterns.
+
+    Primary detection method: Directory-based exclusion
+    - Files in test directories are excluded (most reliable for Java projects with src/test structure)
+    
+    Secondary detection: Filename patterns
+    - Java: Files ending with 'Test.java' or 'Tests.java' (for tests outside standard directories)
+    - JavaScript/TypeScript: Files containing '.test.' or '.spec.' (common JS/TS convention)
+    
+    Test directories detected (case-insensitive):
+    - test, tests, __tests__, spec, specs
+    - This covers standard Java (src/test/java) and JavaScript (__tests__) structures
+
+    Args:
+        file_path: Path object representing the file to check
+
+    Returns:
+        True if the file appears to be a test file, False otherwise
+
+    Examples:
+        >>> is_test_file(Path("src/test/java/CalculatorTest.java"))
+        True
+        >>> is_test_file(Path("src/test/java/Helper.java"))  # Any file in test directory
+        True
+        >>> is_test_file(Path("src/main/java/Calculator.java"))
+        False
+        >>> is_test_file(Path("src/app.test.js"))
+        True
+        >>> is_test_file(Path("__tests__/helper.js"))
+        True
+    """
+    filename = file_path.name
+    parts = file_path.parts
+    
+    # Primary: Check if in test-related directories (handles src/test/java, etc.)
+    if any(part.lower() in _TEST_DIRS for part in parts):
+        return True
+    
+    # Secondary: Check Java test filename patterns (for edge cases)
+    if filename.endswith('.java'):
+        # Common Java test patterns: *Test.java, *Tests.java
+        # Note: We avoid Test*.java prefix pattern to prevent false positives
+        # for utility classes like TestUtils.java or TestConstants.java
+        if filename.endswith('Test.java') or filename.endswith('Tests.java'):
+            return True
+    
+    # Secondary: Check JavaScript/TypeScript test filename patterns
+    # Patterns: *.test.js, *.spec.js, *.test.ts, *.spec.ts, etc.
+    if any(pattern in filename for pattern in _JS_TEST_PATTERNS):
+        return True
+    
+    return False
+
+
 def scan_single_repository(repo_path: str) -> Tuple[str, List[FunctionInfo]]:
     """
     Scan a single repository and return results.
@@ -317,6 +378,10 @@ def scan_single_repository(repo_path: str) -> Tuple[str, List[FunctionInfo]]:
                 # Skip common directories using set lookup
                 if any(part in SKIP_DIRS for part in file_path.parts):
                     continue
+                
+                # Skip test files
+                if is_test_file(file_path):
+                    continue
 
                 functions = JavaScriptParser.parse_functions(str(file_path))
                 # Make paths relative to repo root
@@ -328,6 +393,10 @@ def scan_single_repository(repo_path: str) -> Tuple[str, List[FunctionInfo]]:
         for file_path in Path(local_path).rglob('*.java'):
             # Skip common build directories using set lookup
             if any(part in SKIP_DIRS for part in file_path.parts):
+                continue
+            
+            # Skip test files
+            if is_test_file(file_path):
                 continue
 
             functions = JavaParser.parse_functions(str(file_path))

@@ -19,6 +19,7 @@ from function_size_calculator import (
     JavaParser,
     JavaScriptParser,
     JSONWriter,
+    is_test_file,
     print_progress_bar,
     scan_single_repository,
 )
@@ -412,13 +413,13 @@ function testFunc() {
     (src_dir / "test.js").write_text(js_content)
 
     java_content = """
-public class Test {
+public class Sample {
     public void testMethod() {
         System.out.println("test");
     }
 }
 """
-    (src_dir / "Test.java").write_text(java_content)
+    (src_dir / "Sample.java").write_text(java_content)
 
     return repo_dir
 
@@ -537,3 +538,191 @@ class TestEmptyResults:
         assert "empty-repo" in data
         assert data["empty-repo"]["summary"] == {}
         assert data["empty-repo"]["top_functions"] == []
+
+
+class TestIsTestFile:
+    """Tests for is_test_file function."""
+
+    def test_java_test_file_with_test_suffix(self):
+        """Should identify Java files ending with Test.java as test files."""
+        assert is_test_file(Path("/src/main/java/SampleTest.java")) is True
+        assert is_test_file(Path("/src/main/java/UserTest.java")) is True
+
+    def test_java_test_file_with_tests_suffix(self):
+        """Should identify Java files ending with Tests.java as test files."""
+        assert is_test_file(Path("/src/main/java/SampleTests.java")) is True
+        assert is_test_file(Path("/src/main/java/UserTests.java")) is True
+
+    def test_java_non_test_file(self):
+        """Should not identify regular Java files as test files."""
+        assert is_test_file(Path("/src/main/java/Sample.java")) is False
+        assert is_test_file(Path("/src/main/java/User.java")) is False
+        # TestUtils.java should NOT be identified as a test file (avoids false positives)
+        assert is_test_file(Path("/src/main/java/TestUtils.java")) is False
+        assert is_test_file(Path("/src/main/java/TestConstants.java")) is False
+
+    def test_javascript_test_file_with_test_extension(self):
+        """Should identify JS/TS files with .test. pattern as test files."""
+        assert is_test_file(Path("/src/sample.test.js")) is True
+        assert is_test_file(Path("/src/sample.test.ts")) is True
+        assert is_test_file(Path("/src/component.test.jsx")) is True
+        assert is_test_file(Path("/src/component.test.tsx")) is True
+
+    def test_javascript_spec_file(self):
+        """Should identify JS/TS files with .spec. pattern as test files."""
+        assert is_test_file(Path("/src/sample.spec.js")) is True
+        assert is_test_file(Path("/src/sample.spec.ts")) is True
+        assert is_test_file(Path("/src/component.spec.jsx")) is True
+        assert is_test_file(Path("/src/component.spec.tsx")) is True
+
+    def test_javascript_non_test_file(self):
+        """Should not identify regular JS/TS files as test files."""
+        assert is_test_file(Path("/src/sample.js")) is False
+        assert is_test_file(Path("/src/sample.ts")) is False
+        assert is_test_file(Path("/src/component.jsx")) is False
+        assert is_test_file(Path("/src/component.tsx")) is False
+
+    def test_file_in_test_directory(self):
+        """Should identify files in test directories as test files."""
+        assert is_test_file(Path("/src/test/Sample.java")) is True
+        assert is_test_file(Path("/src/tests/Sample.java")) is True
+        assert is_test_file(Path("/src/__tests__/sample.js")) is True
+        assert is_test_file(Path("/src/spec/sample.js")) is True
+        assert is_test_file(Path("/src/specs/sample.js")) is True
+
+    def test_file_in_test_directory_case_insensitive(self):
+        """Should identify files in test directories (case-insensitive)."""
+        assert is_test_file(Path("/src/Test/Sample.java")) is True
+        assert is_test_file(Path("/src/Tests/Sample.java")) is True
+        assert is_test_file(Path("/src/TESTS/Sample.java")) is True
+
+    def test_java_maven_gradle_structure(self):
+        """Should handle standard Java Maven/Gradle src/test directory structure."""
+        # Files in src/test should be excluded regardless of filename
+        assert is_test_file(Path("src/test/java/com/example/CalculatorTest.java")) is True
+        assert is_test_file(Path("src/test/java/com/example/Helper.java")) is True
+        assert is_test_file(Path("src/test/java/Utils.java")) is True
+        
+        # Files in src/main should be included
+        assert is_test_file(Path("src/main/java/com/example/Calculator.java")) is False
+        assert is_test_file(Path("src/main/java/com/example/Service.java")) is False
+
+
+class TestExcludeTestFiles:
+    """Tests for ensuring test files are excluded from repository scanning."""
+
+    def test_exclude_java_test_files(self, tmp_path: Path):
+        """Should exclude Java test files from scanning."""
+        repo_dir = tmp_path / "java_repo"
+        src_dir = repo_dir / "src" / "main" / "java"
+        test_dir = repo_dir / "src" / "test" / "java"
+        src_dir.mkdir(parents=True)
+        test_dir.mkdir(parents=True)
+
+        # Create a regular source file
+        source_content = """
+public class Calculator {
+    public int add(int a, int b) {
+        return a + b;
+    }
+}
+"""
+        (src_dir / "Calculator.java").write_text(source_content)
+
+        # Create test files that should be excluded
+        test_content = """
+public class CalculatorTest {
+    public void testAdd() {
+        Calculator calc = new Calculator();
+        assert calc.add(2, 3) == 5;
+    }
+}
+"""
+        (test_dir / "CalculatorTest.java").write_text(test_content)
+        (src_dir / "UtilsTest.java").write_text(test_content)
+
+        # Scan the repository
+        repo_name, functions = scan_single_repository(str(repo_dir))
+
+        # Should find functions from Calculator.java but not from test files
+        assert repo_name is not None
+        func_files = [f.file_path for f in functions]
+        
+        # Should have function from Calculator.java
+        assert any("Calculator.java" in f and "Test" not in f for f in func_files)
+        
+        # Should NOT have functions from test files
+        assert not any("CalculatorTest.java" in f for f in func_files)
+        assert not any("UtilsTest.java" in f for f in func_files)
+
+    def test_exclude_javascript_test_files(self, tmp_path: Path):
+        """Should exclude JavaScript test files from scanning."""
+        repo_dir = tmp_path / "js_repo"
+        src_dir = repo_dir / "src"
+        src_dir.mkdir(parents=True)
+
+        # Create a regular source file
+        source_content = """
+function calculate(a, b) {
+    return a + b;
+}
+
+const multiply = (a, b) => {
+    return a * b;
+};
+"""
+        (src_dir / "utils.js").write_text(source_content)
+
+        # Create test files that should be excluded
+        test_content = """
+function testCalculate() {
+    expect(calculate(2, 3)).toBe(5);
+}
+
+const testMultiply = () => {
+    expect(multiply(2, 3)).toBe(6);
+};
+"""
+        (src_dir / "utils.test.js").write_text(test_content)
+        (src_dir / "utils.spec.js").write_text(test_content)
+
+        # Scan the repository
+        repo_name, functions = scan_single_repository(str(repo_dir))
+
+        # Should find functions from utils.js but not from test files
+        assert repo_name is not None
+        func_files = [f.file_path for f in functions]
+        
+        # Should have functions from utils.js
+        assert any("utils.js" in f and ".test." not in f and ".spec." not in f for f in func_files)
+        
+        # Should NOT have functions from test files
+        assert not any("utils.test.js" in f for f in func_files)
+        assert not any("utils.spec.js" in f for f in func_files)
+
+    def test_exclude_files_in_tests_directory(self, tmp_path: Path):
+        """Should exclude all files in test directories."""
+        repo_dir = tmp_path / "mixed_repo"
+        src_dir = repo_dir / "src"
+        test_dir = repo_dir / "tests"
+        src_dir.mkdir(parents=True)
+        test_dir.mkdir(parents=True)
+
+        # Create source files
+        (src_dir / "app.js").write_text("function app() { return 'app'; }")
+        
+        # Create files in test directory (should be excluded even without test naming)
+        (test_dir / "helper.js").write_text("function helper() { return 'test helper'; }")
+        (test_dir / "Helper.java").write_text("public class Helper { public void help() {} }")
+
+        # Scan the repository
+        repo_name, functions = scan_single_repository(str(repo_dir))
+
+        assert repo_name is not None
+        func_files = [f.file_path for f in functions]
+        
+        # Should have function from app.js
+        assert any("app.js" in f for f in func_files)
+        
+        # Should NOT have functions from files in tests directory
+        assert not any("tests" in Path(f).parts for f in func_files)
