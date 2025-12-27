@@ -26,11 +26,16 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install ruff pytest-cov
 
-      - name: Run tests
+      - name: Run linter
+        run: |
+          ruff check --output-format=github .
+
+      - name: Run tests with coverage
         run: |
           set -o pipefail
-          pytest --tb=short --color=no 2>&1 | tee test-output.txt
+          pytest --tb=short --color=no --cov=function_size_calculator --cov-report=term-missing 2>&1 | tee test-output.txt
 
       - name: Update README with test results
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')

@@ -14,20 +14,20 @@ def parse_test_output(test_output):
     platform = platform_match.group(1) if platform_match else "linux"
     python_version = platform_match.group(2) if platform_match else "3.12.0"
     pytest_version = platform_match.group(3) if platform_match else "9.0.0"
-    
+
     # Extract execution time
     time_match = re.search(r'(\d+) passed in ([\d.]+)s', test_output)
     total_passed = int(time_match.group(1)) if time_match else 0
     exec_time = time_match.group(2) if time_match else "0"
-    
+
     # Extract test categories and counts
     test_categories = defaultdict(int)
     test_pattern = r'tests/test_\w+\.py::(\w+)::\w+ PASSED'
-    
+
     for match in re.finditer(test_pattern, test_output):
         category = match.group(1)
         test_categories[category] += 1
-    
+
     return {
         'platform': platform,
         'python_version': python_version,
@@ -57,20 +57,20 @@ def generate_test_summary_table(test_info):
     """Generate a markdown table summarizing test results."""
     categories = test_info['categories']
     total_tests = test_info['total_passed']
-    
+
     # Build table rows
     rows = []
     for category, count in sorted(categories.items()):
         friendly_name = format_category_name(category)
         rows.append(f"| **{friendly_name}** | {count} | ✅ All Passed |")
-    
+
     # Add total row
     rows.append(f"| **Total** | **{total_tests}** | **✅ {total_tests} Passed** |")
-    
+
     table = "| Test Category | Tests | Status |\n"
     table += "|--------------|-------|--------|\n"
     table += "\n".join(rows)
-    
+
     return table
 
 
@@ -88,22 +88,22 @@ def main():
         return 1
 
     # Read test output
-    with open("test-output.txt", "r", encoding="utf-8") as f:
+    with open("test-output.txt", encoding="utf-8") as f:
         test_output = f.read()
 
     # Read current README
-    with open("README.md", "r", encoding="utf-8") as f:
+    with open("README.md", encoding="utf-8") as f:
         content = f.read()
 
     # Parse test output
     test_info = parse_test_output(test_output)
-    
+
     # Generate timestamp
     timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
     # Generate test summary table
     summary_table = generate_test_summary_table(test_info)
-    
+
     # Create the test results section with table format
     new_section = f"""## Test Results
 

@@ -1,0 +1,39 @@
+[tool.ruff]
+# Target Python version
+target-version = "py38"
+
+# Maximum line length
+line-length = 120
+
+[tool.ruff.lint]
+# Enable specific rule categories
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+]
+
+# Ignore specific rules
+ignore = [
+    "E501",  # Line too long (handled by line-length setting)
+]
+
+[tool.ruff.lint.isort]
+# Organize imports consistently
+known-first-party = ["function_size_calculator"]
+
+[tool.pytest.ini_options]
+addopts = "-vv --color=yes"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["function_size_calculator"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+]

@@ -7,9 +7,15 @@ venv/
 
 # Output files
 *.xlsx
+*.json
 
 # Test output
 test-output.txt
+
+# Coverage reports
+.coverage
+htmlcov/
+coverage.xml
 
 # Temporary directories
 function_calculator_*/
@@ -18,3 +24,9 @@ test_function_calc_*/
 
 # Repository list files (examples)
 repos.txt
+
+# Pytest cache
+.pytest_cache/
+
+# Ruff cache
+.ruff_cache/
