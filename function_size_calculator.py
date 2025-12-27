@@ -274,7 +274,7 @@ def scan_single_repository(repo_path: str) -> Tuple[str, List[FunctionInfo]]:
     # Common directories to skip - using sets for O(1) lookup
     SKIP_DIRS = {
         'node_modules', '.git', 'target', 'build', 'out', 
-        'dist', 'coverage'
+        'dist', 'coverage', '.gradle'
     }
     
     temp_dir = None
