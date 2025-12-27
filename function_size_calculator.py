@@ -676,21 +676,21 @@ class JSONWriter:
             if filtered_functions:
                 total = len(filtered_functions)
                 total_size = 0
-                min_size = float('inf')
-                max_size = 0
+                smallest_size = float('inf')
+                largest_size = 0
                 
                 for func in filtered_functions:
                     total_size += func.size
-                    if func.size < min_size:
-                        min_size = func.size
-                    if func.size > max_size:
-                        max_size = func.size
+                    if func.size < smallest_size:
+                        smallest_size = func.size
+                    if func.size > largest_size:
+                        largest_size = func.size
                 
                 summary = {
                     'total_functions': total,
                     'average_size': round(total_size / total, 1),
-                    'largest_function_size': max_size,
-                    'smallest_function_size': min_size
+                    'largest_function_size': largest_size,
+                    'smallest_function_size': smallest_size
                 }
             
             output_data[repo_name] = {

@@ -668,6 +668,42 @@ class TestJSONWriter(unittest.TestCase):
         
         # Summary should reflect filtered functions
         self.assertEqual(data['test-repo']['summary']['total_functions'], 3)
+    
+    def test_min_size_filter_multiple_repos(self):
+        """Test that min_size filter works correctly for multiple repositories.
+        
+        This test verifies that the min_size parameter is not accidentally
+        shadowed by local variables during processing of multiple repos.
+        """
+        # Create different sample functions for each repo
+        repo1_functions = [
+            FunctionInfo("large_func", "file1.js", 1, 50, 50),
+            FunctionInfo("medium_func", "file2.js", 1, 25, 25),
+        ]
+        repo2_functions = [
+            FunctionInfo("small_func", "file3.js", 1, 5, 5),
+            FunctionInfo("tiny_func", "file4.js", 1, 3, 3),
+        ]
+        
+        repo_results = {
+            'repo1': repo1_functions,
+            'repo2': repo2_functions,
+        }
+        
+        # Set min_size=2 so all functions should be included
+        with redirect_stdout(StringIO()):
+            JSONWriter.write_results(repo_results, self.output_file, top_n=10, min_size=2)
+        
+        with open(self.output_file, 'r') as f:
+            data = json.load(f)
+        
+        # Both repos should have functions
+        self.assertEqual(data['repo1']['summary']['total_functions'], 2)
+        self.assertEqual(data['repo2']['summary']['total_functions'], 2)
+        
+        # Verify all functions are included
+        self.assertEqual(len(data['repo1']['top_functions']), 2)
+        self.assertEqual(len(data['repo2']['top_functions']), 2)
 
 
 class TestScanRepository(unittest.TestCase):
