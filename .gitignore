@@ -8,6 +8,9 @@ venv/
 # Output files
 *.xlsx
 
+# Test output
+test-output.txt
+
 # Temporary directories
 function_calculator_*/
 test_repo_*/
