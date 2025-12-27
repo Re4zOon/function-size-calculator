@@ -360,10 +360,10 @@ class CSharpParser:
     """Parser for C# methods."""
     
     # Compile regex pattern once for better performance
-    # C# methods typically have opening brace on next line
+    # C# methods can have opening brace on same line or next line
     METHOD_PATTERN = re.compile(
         r'^\s*(?:public|private|protected|internal)?\s*(?:static)?\s*(?:virtual|override|abstract|sealed|async)?\s*'
-        r'[\w<>\[\]?]+\s+(\w+)\s*\([^)]*\)\s*$'
+        r'[\w<>\[\]?]+\s+(\w+)\s*\([^)]*\)\s*\{?\s*$'
     )
     
     @staticmethod
@@ -424,10 +424,12 @@ class CSharpParser:
                         pending_method = None
                     
                     # Look for new method declarations
-                    elif not pending_method:
+                    else:
                         match = CSharpParser.METHOD_PATTERN.search(line)
                         if match:
                             method_name = match.group(1)
+                            # Discard any pending method if we find a new declaration
+                            pending_method = None
                             # Check if opening brace is on the same line
                             if '{' in line:
                                 brace_count = line.count('{') - line.count('}')
@@ -626,14 +628,26 @@ class ExcelWriter:
                 ])
             
             # Add summary statistics at the bottom
+            # Calculate in a single pass for efficiency
             if filtered_functions:
+                total = len(filtered_functions)
+                total_size = 0
+                smallest_size = float('inf')
+                largest_size = 0
+                
+                for func in filtered_functions:
+                    total_size += func.size
+                    if func.size < smallest_size:
+                        smallest_size = func.size
+                    if func.size > largest_size:
+                        largest_size = func.size
+                
                 ws.append([])  # Empty row
                 ws.append(['Summary Statistics'])
-                ws.append(['Total Functions Found:', len(filtered_functions)])
-                ws.append(['Average Function Size:', 
-                          f"{sum(f.size for f in filtered_functions) / len(filtered_functions):.1f} lines"])
-                ws.append(['Largest Function:', max(f.size for f in filtered_functions)])
-                ws.append(['Smallest Function:', min(f.size for f in filtered_functions)])
+                ws.append(['Total Functions Found:', total])
+                ws.append(['Average Function Size:', f"{total_size / total:.1f} lines"])
+                ws.append(['Largest Function:', largest_size])
+                ws.append(['Smallest Function:', smallest_size])
             
             # Adjust column widths
             ws.column_dimensions['A'].width = 8
