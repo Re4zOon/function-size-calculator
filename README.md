@@ -251,45 +251,23 @@ To use JSON format, either:
 
 ![Tests](https://github.com/Re4zOon/function-size-calculator/actions/workflows/test.yml/badge.svg)
 
-```
-============================= test session starts ==============================
-platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0 -- /opt/hostedtoolcache/Python/3.12.12/x64/bin/python
-cachedir: .pytest_cache
-rootdir: /home/runner/work/function-size-calculator/function-size-calculator
-configfile: pytest.ini
-testpaths: tests
-collecting ... collected 27 items
+### Test Summary
 
-tests/test_function_size_calculator.py::TestFunctionInfo::test_function_info_creation PASSED [  3%]
-tests/test_function_size_calculator.py::TestFunctionInfo::test_function_info_repr PASSED [  7%]
-tests/test_function_size_calculator.py::TestFunctionInfo::test_function_info_to_dict PASSED [ 11%]
-tests/test_function_size_calculator.py::TestJavaScriptParser::test_parse_javascript_file PASSED [ 14%]
-tests/test_function_size_calculator.py::TestJavaScriptParser::test_parse_typescript_file PASSED [ 18%]
-tests/test_function_size_calculator.py::TestJavaScriptParser::test_function_size_calculation PASSED [ 22%]
-tests/test_function_size_calculator.py::TestJavaScriptParser::test_parse_nonexistent_file PASSED [ 25%]
-tests/test_function_size_calculator.py::TestJavaScriptParser::test_function_line_numbers PASSED [ 29%]
-tests/test_function_size_calculator.py::TestJavaParser::test_parse_java_file PASSED [ 33%]
-tests/test_function_size_calculator.py::TestJavaParser::test_java_method_modifiers PASSED [ 37%]
-tests/test_function_size_calculator.py::TestJavaParser::test_java_function_size PASSED [ 40%]
-tests/test_function_size_calculator.py::TestJavaParser::test_parse_nonexistent_java_file PASSED [ 44%]
-tests/test_function_size_calculator.py::TestExcelWriter::test_write_results_single_repo PASSED [ 48%]
-tests/test_function_size_calculator.py::TestExcelWriter::test_write_results_multiple_repos PASSED [ 51%]
-tests/test_function_size_calculator.py::TestExcelWriter::test_sanitize_sheet_name PASSED [ 55%]
-tests/test_function_size_calculator.py::TestExcelWriter::test_top_n_parameter PASSED [ 59%]
-tests/test_function_size_calculator.py::TestExcelWriter::test_min_size_filter PASSED [ 62%]
-tests/test_function_size_calculator.py::TestExcelWriter::test_summary_statistics PASSED [ 66%]
-tests/test_function_size_calculator.py::TestJSONWriter::test_write_results_single_repo PASSED [ 70%]
-tests/test_function_size_calculator.py::TestJSONWriter::test_write_results_multiple_repos PASSED [ 74%]
-tests/test_function_size_calculator.py::TestJSONWriter::test_top_n_parameter PASSED [ 77%]
-tests/test_function_size_calculator.py::TestJSONWriter::test_min_size_filter PASSED [ 81%]
-tests/test_function_size_calculator.py::TestJSONWriter::test_min_size_filter_multiple_repos PASSED [ 85%]
-tests/test_function_size_calculator.py::TestScanRepository::test_scan_local_repository PASSED [ 88%]
-tests/test_function_size_calculator.py::TestScanRepository::test_scan_nonexistent_repository PASSED [ 92%]
-tests/test_function_size_calculator.py::TestScanRepository::test_relative_paths PASSED [ 96%]
-tests/test_function_size_calculator.py::TestCommandLineArguments::test_input_file_parsing PASSED [100%]
+| Test Category | Tests | Status |
+|--------------|-------|--------|
+| **FunctionInfo** | 3 | ✅ All Passed |
+| **JavaScript/TypeScript Parser** | 5 | ✅ All Passed |
+| **Java Parser** | 4 | ✅ All Passed |
+| **Excel Writer** | 6 | ✅ All Passed |
+| **JSON Writer** | 5 | ✅ All Passed |
+| **Repository Scanner** | 3 | ✅ All Passed |
+| **Command-Line Arguments** | 1 | ✅ All Passed |
+| **Total** | **27** | **✅ 27 Passed** |
 
-============================== 27 passed in 0.36s ==============================
-```
+### Performance
+
+- **Execution Time**: 0.36 seconds
+- **Platform**: Linux, Python 3.12.12, pytest 9.0.2
 
 *Last updated: 2025-12-27 04:34:03 UTC*
 ## License
