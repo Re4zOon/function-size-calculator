@@ -15,7 +15,6 @@ import sys
 import tempfile
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 try:
     import openpyxl
@@ -73,7 +72,7 @@ class FunctionInfo:
     def __repr__(self):
         return f"FunctionInfo({self.name}, {self.file_path}, lines={self.size})"
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert FunctionInfo to dictionary for JSON serialization."""
         return {
             'name': self.name,
@@ -100,7 +99,7 @@ class JavaScriptParser:
     ]
 
     @staticmethod
-    def parse_functions(file_path: str) -> List[FunctionInfo]:
+    def parse_functions(file_path: str) -> list[FunctionInfo]:
         """
         Parse JavaScript/TypeScript file to extract functions.
 
@@ -185,7 +184,7 @@ class JavaParser:
     )
 
     @staticmethod
-    def parse_functions(file_path: str) -> List[FunctionInfo]:
+    def parse_functions(file_path: str) -> list[FunctionInfo]:
         """
         Parse Java file to extract methods.
 
@@ -269,11 +268,11 @@ def is_test_file(file_path: Path) -> bool:
 
     Primary detection method: Directory-based exclusion
     - Files in test directories are excluded (most reliable for Java projects with src/test structure)
-    
+
     Secondary detection: Filename patterns
     - Java: Files ending with 'Test.java' or 'Tests.java' (for tests outside standard directories)
     - JavaScript/TypeScript: Files containing '.test.' or '.spec.' (common JS/TS convention)
-    
+
     Test directories detected (case-insensitive):
     - test, tests, __tests__, spec, specs
     - This covers standard Java (src/test/java) and JavaScript (__tests__) structures
@@ -298,11 +297,11 @@ def is_test_file(file_path: Path) -> bool:
     """
     filename = file_path.name
     parts = file_path.parts
-    
+
     # Primary: Check if in test-related directories (handles src/test/java, etc.)
     if any(part.lower() in _TEST_DIRS for part in parts):
         return True
-    
+
     # Secondary: Check Java test filename patterns (for edge cases)
     if filename.endswith('.java'):
         # Common Java test patterns: *Test.java, *Tests.java
@@ -310,16 +309,16 @@ def is_test_file(file_path: Path) -> bool:
         # for utility classes like TestUtils.java or TestConstants.java
         if filename.endswith('Test.java') or filename.endswith('Tests.java'):
             return True
-    
+
     # Secondary: Check JavaScript/TypeScript test filename patterns
     # Patterns: *.test.js, *.spec.js, *.test.ts, *.spec.ts, etc.
     if any(pattern in filename for pattern in _JS_TEST_PATTERNS):
         return True
-    
+
     return False
 
 
-def scan_single_repository(repo_path: str) -> Tuple[str, List[FunctionInfo]]:
+def scan_single_repository(repo_path: str) -> tuple[str, list[FunctionInfo]]:
     """
     Scan a single repository and return results.
 
@@ -378,7 +377,7 @@ def scan_single_repository(repo_path: str) -> Tuple[str, List[FunctionInfo]]:
                 # Skip common directories using set lookup
                 if any(part in SKIP_DIRS for part in file_path.parts):
                     continue
-                
+
                 # Skip test files
                 if is_test_file(file_path):
                     continue
@@ -394,7 +393,7 @@ def scan_single_repository(repo_path: str) -> Tuple[str, List[FunctionInfo]]:
             # Skip common build directories using set lookup
             if any(part in SKIP_DIRS for part in file_path.parts):
                 continue
-            
+
             # Skip test files
             if is_test_file(file_path):
                 continue
@@ -422,7 +421,7 @@ class ExcelWriter:
     """Writes results to Excel (XLSX) file."""
 
     @staticmethod
-    def write_results(repo_results: Dict[str, List[FunctionInfo]], output_file: str,
+    def write_results(repo_results: dict[str, list[FunctionInfo]], output_file: str,
                      top_n: int = 5, min_size: int = 1):
         """
         Write results to Excel (XLSX) file with each repo on a separate tab.
@@ -512,7 +511,7 @@ class JSONWriter:
     """Writes results to JSON file."""
 
     @staticmethod
-    def write_results(repo_results: Dict[str, List[FunctionInfo]], output_file: str,
+    def write_results(repo_results: dict[str, list[FunctionInfo]], output_file: str,
                      top_n: int = 5, min_size: int = 1):
         """
         Write results to JSON file.

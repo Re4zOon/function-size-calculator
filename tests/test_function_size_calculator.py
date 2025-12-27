@@ -602,7 +602,7 @@ class TestIsTestFile:
         assert is_test_file(Path("src/test/java/com/example/CalculatorTest.java")) is True
         assert is_test_file(Path("src/test/java/com/example/Helper.java")) is True
         assert is_test_file(Path("src/test/java/Utils.java")) is True
-        
+
         # Files in src/main should be included
         assert is_test_file(Path("src/main/java/com/example/Calculator.java")) is False
         assert is_test_file(Path("src/main/java/com/example/Service.java")) is False
@@ -647,10 +647,10 @@ public class CalculatorTest {
         # Should find functions from Calculator.java but not from test files
         assert repo_name is not None
         func_files = [f.file_path for f in functions]
-        
+
         # Should have function from Calculator.java
         assert any("Calculator.java" in f and "Test" not in f for f in func_files)
-        
+
         # Should NOT have functions from test files
         assert not any("CalculatorTest.java" in f for f in func_files)
         assert not any("UtilsTest.java" in f for f in func_files)
@@ -692,10 +692,10 @@ const testMultiply = () => {
         # Should find functions from utils.js but not from test files
         assert repo_name is not None
         func_files = [f.file_path for f in functions]
-        
+
         # Should have functions from utils.js
         assert any("utils.js" in f and ".test." not in f and ".spec." not in f for f in func_files)
-        
+
         # Should NOT have functions from test files
         assert not any("utils.test.js" in f for f in func_files)
         assert not any("utils.spec.js" in f for f in func_files)
@@ -710,7 +710,7 @@ const testMultiply = () => {
 
         # Create source files
         (src_dir / "app.js").write_text("function app() { return 'app'; }")
-        
+
         # Create files in test directory (should be excluded even without test naming)
         (test_dir / "helper.js").write_text("function helper() { return 'test helper'; }")
         (test_dir / "Helper.java").write_text("public class Helper { public void help() {} }")
@@ -720,9 +720,9 @@ const testMultiply = () => {
 
         assert repo_name is not None
         func_files = [f.file_path for f in functions]
-        
+
         # Should have function from app.js
         assert any("app.js" in f for f in func_files)
-        
+
         # Should NOT have functions from files in tests directory
         assert not any("tests" in Path(f).parts for f in func_files)
