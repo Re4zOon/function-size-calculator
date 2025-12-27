@@ -12,8 +12,8 @@ def parse_test_output(test_output):
     # Extract platform information - note: pytest version has a hyphen (pytest-X.Y.Z)
     platform_match = re.search(r'platform (\S+) -- Python ([\d.]+), pytest-([\d.]+)', test_output)
     platform = platform_match.group(1) if platform_match else "linux"
-    python_version = platform_match.group(2) if platform_match else "3.12"
-    pytest_version = platform_match.group(3) if platform_match else "9.0"
+    python_version = platform_match.group(2) if platform_match else "3.12.0"
+    pytest_version = platform_match.group(3) if platform_match else "9.0.0"
     
     # Extract execution time
     time_match = re.search(r'(\d+) passed in ([\d.]+)s', test_output)
@@ -116,7 +116,7 @@ def main():
 ### Performance
 
 - **Execution Time**: {test_info['exec_time']} seconds
-- **Platform**: {test_info['platform'].capitalize()}, Python {test_info['python_version']}, pytest {test_info['pytest_version']}
+- **Platform**: {test_info['platform'].title()}, Python {test_info['python_version']}, pytest {test_info['pytest_version']}
 
 *Last updated: {timestamp}*"""
 
