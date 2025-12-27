@@ -254,14 +254,18 @@ To use JSON format, either:
 1. **Repository Access**: Clones remote repositories to temporary directories or uses local paths
 2. **Parallel Processing**: Scans multiple repositories concurrently for improved performance
 3. **File Discovery**: Recursively finds all relevant source files (skips `node_modules`, `.git`, `target`, `build`, etc.)
-4. **Function Parsing**: Uses streaming parsers with regex patterns and brace-tracking to identify function/method declarations
+4. **Test File Exclusion**: Automatically excludes test files to focus on production code
+   - **Java**: Excludes files ending with `Test.java`, `Tests.java`, or starting with `Test`
+   - **JavaScript/TypeScript**: Excludes files with `.test.` or `.spec.` in their name
+   - **All languages**: Excludes files in `test`, `tests`, `__tests__`, `spec`, or `specs` directories
+5. **Function Parsing**: Uses streaming parsers with regex patterns and brace-tracking to identify function/method declarations
    - **Memory-Efficient**: Processes files line-by-line without loading entire files into memory, allowing analysis of very large files
    - **JavaScript/TypeScript/Java**: Counts lines by tracking brace pairs `{}`
-5. **Size Calculation**: Counts lines from function start to end
-6. **Filtering**: Applies minimum size filter to exclude trivial functions
-7. **Ranking**: Sorts functions by line count and selects top N per repository
-8. **Export**: Creates formatted Excel or JSON file with results and summary statistics
-9. **Cleanup**: Automatically removes temporary cloned repositories
+6. **Size Calculation**: Counts lines from function start to end
+7. **Filtering**: Applies minimum size filter to exclude trivial functions
+8. **Ranking**: Sorts functions by line count and selects top N per repository
+9. **Export**: Creates formatted Excel or JSON file with results and summary statistics
+10. **Cleanup**: Automatically removes temporary cloned repositories
 
 ## Limitations
 
@@ -269,6 +273,7 @@ To use JSON format, either:
 - Nested functions are counted separately
 - Very complex or unconventional syntax may not be detected
 - Excludes common dependency directories (node_modules, target, build, etc.)
+- Excludes test files based on common naming patterns
 
 ## Test Results
 
