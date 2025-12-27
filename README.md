@@ -1,20 +1,24 @@
 # Function Size Calculator
 
-A Python tool that scans git repositories to find the largest functions in Java, Node.js, and Python codebases. The results are exported to an Excel (XLSX) file with each repository on a separate tab.
+A Python tool that scans git repositories to find the largest functions in Java, Node.js, Python, and C# codebases. The results are exported to an Excel (XLSX) or JSON file with each repository on a separate tab.
 
 ## Features
 
 - Scans multiple git repositories (local or remote)
 - **Parallel processing** for efficient scanning of multiple repositories
-- Supports Node.js (JavaScript, TypeScript), Java, and **Python**
+- Supports Node.js (JavaScript, TypeScript), Java, Python, and **C#**
+- **Memory-efficient streaming** handles very large files without loading entire files into memory
+- **Multiple output formats**: Excel (XLSX) and JSON
 - **Configurable number of top functions** to report (default: 5)
 - **Minimum function size filter** to exclude trivial functions
 - **Summary statistics** for each repository
+- **Git clone timeout** to prevent hanging on problematic repositories
 - Exports results to Excel format with:
   - Each repository on a separate tab
   - Function name, file path, line numbers, and size
   - Summary statistics (total functions, average size, largest/smallest)
   - Formatted headers and auto-sized columns
+- JSON export option for programmatic consumption
 - Automatic cleanup of temporary cloned repositories
 
 ## Installation
@@ -140,19 +144,31 @@ python function_size_calculator.py -i repos.txt -m 10
 python function_size_calculator.py -i repos.txt -n 20 -m 5 -j 8 -o detailed_analysis.xlsx
 ```
 
+11. Generate JSON output instead of Excel:
+```bash
+python function_size_calculator.py -i repos.txt -o results.json
+```
+
+12. Explicitly specify output format:
+```bash
+python function_size_calculator.py -i repos.txt -f json -o results.json
+```
+
 ### Command-Line Options
 
 - `repositories`: One or more git repository URLs or local paths (optional if using -i)
 - `-i`, `--input-file`: File containing list of repository URLs/paths (one per line, comments with # are supported)
-- `-o`, `--output`: Output Excel file name (default: `function_sizes.xlsx`)
+- `-o`, `--output`: Output file name (default: `function_sizes.xlsx`). Use .json extension for JSON format.
+- `-f`, `--format`: Output format - `xlsx`, `json`, or `auto` (default: auto - detect from file extension)
 - `-j`, `--jobs`: Number of parallel jobs for scanning repositories (default: 4)
 - `-n`, `--top-n`: Number of top largest functions to report per repository (default: 5)
 - `-m`, `--min-size`: Minimum function size in lines to include (default: 1)
 - `-h`, `--help`: Show help message
 
-## Output Format
+## Output Formats
 
-The tool generates an Excel file with the following structure:
+### Excel (XLSX)
+The default output format. Generates an Excel file with the following structure:
 
 - **Each repository gets its own tab** named after the repository
 - **Columns in each tab:**
@@ -167,6 +183,35 @@ The tool generates an Excel file with the following structure:
   - Average Function Size
   - Largest Function
   - Smallest Function
+
+### JSON
+An alternative output format for programmatic consumption. Structure:
+
+```json
+{
+  "repository-name": {
+    "summary": {
+      "total_functions": 100,
+      "average_size": 15.5,
+      "largest_function_size": 250,
+      "smallest_function_size": 3
+    },
+    "top_functions": [
+      {
+        "name": "functionName",
+        "file_path": "path/to/file.js",
+        "start_line": 10,
+        "end_line": 50,
+        "size": 41
+      }
+    ]
+  }
+}
+```
+
+To use JSON format, either:
+- Use the `.json` extension: `-o results.json`
+- Explicitly specify format: `-f json -o results.json`
 
 ## Supported Languages
 
@@ -188,17 +233,75 @@ The tool generates an Excel file with the following structure:
 - Static and class methods
 - Supports: `.py` files
 
+### C#
+- Methods with various modifiers: `public async Task<string> Method() {}`
+- Access modifiers: public, private, protected, internal
+- Other modifiers: static, virtual, override, abstract, sealed, async
+- Generic return types
+- Supports: `.cs` files
+
 ## How It Works
 
 1. **Repository Access**: Clones remote repositories to temporary directories or uses local paths
 2. **Parallel Processing**: Scans multiple repositories concurrently for improved performance
 3. **File Discovery**: Recursively finds all relevant source files (skips `node_modules`, `.git`, `target`, `__pycache__`, etc.)
-4. **Function Parsing**: Uses regex patterns and indentation-based parsing to identify function/method declarations
-5. **Size Calculation**: Counts lines by tracking brace pairs `{}` (JavaScript/Java) or indentation (Python)
+4. **Function Parsing**: Uses streaming parsers with regex patterns and syntax-based parsing to identify function/method declarations
+   - **Memory-Efficient**: Processes files line-by-line without loading entire files into memory, allowing analysis of very large files
+   - **JavaScript/TypeScript/Java**: Counts lines by tracking brace pairs `{}`
+   - **Python**: Uses indentation-based parsing
+5. **Size Calculation**: Counts lines from function start to end
 6. **Filtering**: Applies minimum size filter to exclude trivial functions
 7. **Ranking**: Sorts functions by line count and selects top N per repository
-8. **Export**: Creates formatted Excel file with results and summary statistics
+8. **Export**: Creates formatted Excel or JSON file with results and summary statistics
 9. **Cleanup**: Automatically removes temporary cloned repositories
+
+## Output Formats
+
+### Excel (XLSX)
+The default output format. Generates an Excel file with the following structure:
+
+- **Each repository gets its own tab** named after the repository
+- **Columns in each tab:**
+  - Rank: Position in top N (1-N based on --top-n parameter)
+  - Function Name: Name of the function/method
+  - File Path: Relative path to the file containing the function
+  - Start Line: Line number where the function starts
+  - End Line: Line number where the function ends
+  - Lines of Code: Total lines in the function
+- **Summary Statistics:**
+  - Total Functions Found
+  - Average Function Size
+  - Largest Function
+  - Smallest Function
+
+### JSON
+An alternative output format for programmatic consumption. Structure:
+
+```json
+{
+  "repository-name": {
+    "summary": {
+      "total_functions": 100,
+      "average_size": 15.5,
+      "largest_function_size": 250,
+      "smallest_function_size": 3
+    },
+    "top_functions": [
+      {
+        "name": "functionName",
+        "file_path": "path/to/file.js",
+        "start_line": 10,
+        "end_line": 50,
+        "size": 41
+      }
+    ]
+  }
+}
+```
+
+To use JSON format, either:
+- Use the `.json` extension: `-o results.json`
+- Explicitly specify format: `-f json -o results.json`
 
 ## Limitations
 
@@ -208,14 +311,6 @@ The tool generates an Excel file with the following structure:
 - Excludes common dependency directories (node_modules, target, build, etc.)
 
 ## Performance
-
-The tool is optimized for scanning large codebases:
-- **Parallel processing** scans multiple repositories concurrently
-- **Efficient path filtering** uses Path.parts for accurate directory exclusion
-- **Progress reporting** provides real-time feedback during scans
-- Successfully tested on repositories with thousands of functions
-
-## License
 
 This project is open source and available under the MIT License.
 

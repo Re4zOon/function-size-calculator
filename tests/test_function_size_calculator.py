@@ -8,6 +8,7 @@ import os
 import sys
 import tempfile
 import shutil
+import json
 from pathlib import Path
 from io import StringIO
 from contextlib import redirect_stdout, redirect_stderr
@@ -20,7 +21,9 @@ from function_size_calculator import (
     JavaScriptParser,
     JavaParser,
     PythonParser,
+    CSharpParser,
     ExcelWriter,
+    JSONWriter,
     scan_single_repository
 )
 
@@ -58,6 +61,17 @@ class TestFunctionInfo(unittest.TestCase):
         self.assertIn("myFunc", repr_str)
         self.assertIn("file.js", repr_str)
         self.assertIn("11", repr_str)
+    
+    def test_function_info_to_dict(self):
+        """Test FunctionInfo to_dict method."""
+        func = FunctionInfo("testFunc", "test.py", 10, 20, 11)
+        func_dict = func.to_dict()
+        
+        self.assertEqual(func_dict['name'], "testFunc")
+        self.assertEqual(func_dict['file_path'], "test.py")
+        self.assertEqual(func_dict['start_line'], 10)
+        self.assertEqual(func_dict['end_line'], 20)
+        self.assertEqual(func_dict['size'], 11)
 
 
 class TestJavaScriptParser(unittest.TestCase):
@@ -191,6 +205,72 @@ class TestJavaParser(unittest.TestCase):
         # Suppress expected warning output
         with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
             functions = JavaParser.parse_functions("/nonexistent/Sample.java")
+        
+        # Should return empty list, not crash
+        self.assertEqual(len(functions), 0)
+
+
+class TestCSharpParser(unittest.TestCase):
+    """Test cases for CSharpParser."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.fixtures_dir = os.path.join(
+            os.path.dirname(__file__), 
+            'fixtures'
+        )
+        self.cs_file = os.path.join(self.fixtures_dir, 'Sample.cs')
+    
+    def test_parse_csharp_file(self):
+        """Test parsing a C# file."""
+        functions = CSharpParser.parse_functions(self.cs_file)
+        
+        # Should find multiple methods
+        self.assertGreater(len(functions), 0)
+        
+        # Check for specific methods
+        func_names = [f.name for f in functions]
+        self.assertIn("simpleAdd", func_names)
+        self.assertIn("largeMethod", func_names)
+        self.assertIn("asyncMethod", func_names)
+        self.assertIn("virtualMethod", func_names)
+        self.assertIn("ToString", func_names)
+    
+    def test_csharp_method_modifiers(self):
+        """Test that methods with various modifiers are detected."""
+        functions = CSharpParser.parse_functions(self.cs_file)
+        func_names = [f.name for f in functions]
+        
+        # Test different modifier combinations
+        self.assertIn("simpleAdd", func_names)  # public
+        self.assertIn("largeMethod", func_names)  # private static
+        self.assertIn("asyncMethod", func_names)  # protected async
+        self.assertIn("virtualMethod", func_names)  # internal virtual
+        self.assertIn("ToString", func_names)  # public override
+    
+    def test_csharp_function_size(self):
+        """Test that C# method sizes are calculated correctly."""
+        functions = CSharpParser.parse_functions(self.cs_file)
+        
+        # Find the largeMethod
+        large = next((f for f in functions if f.name == "largeMethod"), None)
+        self.assertIsNotNone(large)
+        
+        # largeMethod should be at least 10 lines
+        self.assertGreaterEqual(large.size, 10)
+        
+        # Find simpleAdd
+        simple = next((f for f in functions if f.name == "simpleAdd"), None)
+        self.assertIsNotNone(simple)
+        
+        # simpleAdd should be small
+        self.assertLess(simple.size, 5)
+    
+    def test_parse_nonexistent_csharp_file(self):
+        """Test parsing a C# file that doesn't exist."""
+        # Suppress expected warning output
+        with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+            functions = CSharpParser.parse_functions("/nonexistent/Sample.cs")
         
         # Should return empty list, not crash
         self.assertEqual(len(functions), 0)
@@ -469,6 +549,125 @@ class TestExcelWriter(unittest.TestCase):
         
         self.assertTrue(found_summary, "Summary statistics section not found")
         wb.close()
+
+
+class TestJSONWriter(unittest.TestCase):
+    """Test cases for JSONWriter."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp(prefix='test_json_')
+        self.output_file = os.path.join(self.temp_dir, 'test_output.json')
+        
+        # Create sample function data
+        self.sample_functions = [
+            FunctionInfo("func1", "file1.js", 1, 10, 10),
+            FunctionInfo("func2", "file2.js", 1, 20, 20),
+            FunctionInfo("func3", "file3.js", 1, 15, 15),
+            FunctionInfo("func4", "file4.js", 1, 5, 5),
+            FunctionInfo("func5", "file5.js", 1, 8, 8),
+        ]
+    
+    def tearDown(self):
+        """Clean up temporary files."""
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+    
+    def test_write_results_single_repo(self):
+        """Test writing results for a single repository to JSON."""
+        repo_results = {
+            'test-repo': self.sample_functions
+        }
+        
+        # Suppress "Results saved to" output
+        with redirect_stdout(StringIO()):
+            JSONWriter.write_results(repo_results, self.output_file)
+        
+        # Check that file was created
+        self.assertTrue(os.path.exists(self.output_file))
+        
+        # Load and verify content
+        with open(self.output_file, 'r') as f:
+            data = json.load(f)
+        
+        self.assertIn('test-repo', data)
+        self.assertIn('summary', data['test-repo'])
+        self.assertIn('top_functions', data['test-repo'])
+        
+        # Check summary statistics
+        summary = data['test-repo']['summary']
+        self.assertEqual(summary['total_functions'], 5)
+        self.assertGreater(summary['average_size'], 0)
+        self.assertEqual(summary['largest_function_size'], 20)
+        self.assertEqual(summary['smallest_function_size'], 5)
+        
+        # Check top functions (should be sorted by size)
+        top_funcs = data['test-repo']['top_functions']
+        self.assertEqual(len(top_funcs), 5)
+        self.assertEqual(top_funcs[0]['name'], 'func2')  # Largest (20 lines)
+        self.assertEqual(top_funcs[0]['size'], 20)
+    
+    def test_write_results_multiple_repos(self):
+        """Test writing results for multiple repositories to JSON."""
+        repo_results = {
+            'repo1': self.sample_functions[:3],
+            'repo2': self.sample_functions[3:]
+        }
+        
+        # Suppress "Results saved to" output
+        with redirect_stdout(StringIO()):
+            JSONWriter.write_results(repo_results, self.output_file)
+        
+        # Check that file was created
+        self.assertTrue(os.path.exists(self.output_file))
+        
+        # Load and verify content
+        with open(self.output_file, 'r') as f:
+            data = json.load(f)
+        
+        # Check that both repos exist
+        self.assertIn('repo1', data)
+        self.assertIn('repo2', data)
+    
+    def test_top_n_parameter(self):
+        """Test writing results with custom top N parameter to JSON."""
+        repo_results = {
+            'test-repo': self.sample_functions
+        }
+        
+        # Write only top 3
+        with redirect_stdout(StringIO()):
+            JSONWriter.write_results(repo_results, self.output_file, top_n=3)
+        
+        with open(self.output_file, 'r') as f:
+            data = json.load(f)
+        
+        # Should have only 3 functions
+        self.assertEqual(len(data['test-repo']['top_functions']), 3)
+    
+    def test_min_size_filter(self):
+        """Test writing results with minimum size filter to JSON."""
+        repo_results = {
+            'test-repo': self.sample_functions
+        }
+        
+        # Filter out functions smaller than 10 lines
+        with redirect_stdout(StringIO()):
+            JSONWriter.write_results(repo_results, self.output_file, top_n=10, min_size=10)
+        
+        with open(self.output_file, 'r') as f:
+            data = json.load(f)
+        
+        # Should have 3 functions (func1=10, func2=20, func3=15)
+        top_funcs = data['test-repo']['top_functions']
+        self.assertEqual(len(top_funcs), 3)
+        
+        # All should be >= 10 lines
+        for func in top_funcs:
+            self.assertGreaterEqual(func['size'], 10)
+        
+        # Summary should reflect filtered functions
+        self.assertEqual(data['test-repo']['summary']['total_functions'], 3)
 
 
 class TestScanRepository(unittest.TestCase):
