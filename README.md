@@ -46,19 +46,19 @@ The repository includes a comprehensive test suite to ensure code quality and pr
 
 ### Running Tests
 
-Run all tests:
+Run all tests (pytest is configured for colorful, verbose output):
 ```bash
-python3 -m unittest discover -s tests -p "test_*.py" -v
+pytest
 ```
 
 Run specific test class:
 ```bash
-python3 -m unittest tests.test_function_size_calculator.TestJavaScriptParser -v
+pytest tests/test_function_size_calculator.py -k TestJavaScriptParser
 ```
 
 Run a specific test:
 ```bash
-python3 -m unittest tests.test_function_size_calculator.TestJavaScriptParser.test_parse_javascript_file
+pytest tests/test_function_size_calculator.py -k test_parse_javascript_file
 ```
 
 ### Test Coverage
