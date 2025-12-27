@@ -581,7 +581,7 @@ def main():
 
     if args.input_file:
         try:
-            with open(args.input_file) as f:
+            with open(args.input_file, encoding='utf-8') as f:
                 for line in f:
                     line = line.strip()
                     # Skip empty lines and comments
