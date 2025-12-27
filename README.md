@@ -262,6 +262,61 @@ To use JSON format, either:
 - Very complex or unconventional syntax may not be detected
 - Excludes common dependency directories (node_modules, target, build, etc.)
 
+## Test Results
+
+![Tests](https://github.com/Re4zOon/function-size-calculator/actions/workflows/test.yml/badge.svg)
+
+```
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0 -- /opt/hostedtoolcache/Python/3.12.12/x64/bin/python
+cachedir: .pytest_cache
+rootdir: /home/runner/work/function-size-calculator/function-size-calculator
+configfile: pytest.ini
+testpaths: tests
+collecting ... collected 36 items
+
+tests/test_function_size_calculator.py::TestFunctionInfo::test_function_info_creation PASSED [  2%]
+tests/test_function_size_calculator.py::TestFunctionInfo::test_function_info_repr PASSED [  5%]
+tests/test_function_size_calculator.py::TestFunctionInfo::test_function_info_to_dict PASSED [  8%]
+tests/test_function_size_calculator.py::TestJavaScriptParser::test_parse_javascript_file PASSED [ 11%]
+tests/test_function_size_calculator.py::TestJavaScriptParser::test_parse_typescript_file PASSED [ 13%]
+tests/test_function_size_calculator.py::TestJavaScriptParser::test_function_size_calculation PASSED [ 16%]
+tests/test_function_size_calculator.py::TestJavaScriptParser::test_parse_nonexistent_file PASSED [ 19%]
+tests/test_function_size_calculator.py::TestJavaScriptParser::test_function_line_numbers PASSED [ 22%]
+tests/test_function_size_calculator.py::TestJavaParser::test_parse_java_file PASSED [ 25%]
+tests/test_function_size_calculator.py::TestJavaParser::test_java_method_modifiers PASSED [ 27%]
+tests/test_function_size_calculator.py::TestJavaParser::test_java_function_size PASSED [ 30%]
+tests/test_function_size_calculator.py::TestJavaParser::test_parse_nonexistent_java_file PASSED [ 33%]
+tests/test_function_size_calculator.py::TestCSharpParser::test_parse_csharp_file PASSED [ 36%]
+tests/test_function_size_calculator.py::TestCSharpParser::test_csharp_method_modifiers PASSED [ 38%]
+tests/test_function_size_calculator.py::TestCSharpParser::test_csharp_function_size PASSED [ 41%]
+tests/test_function_size_calculator.py::TestCSharpParser::test_parse_nonexistent_csharp_file PASSED [ 44%]
+tests/test_function_size_calculator.py::TestPythonParser::test_parse_python_file PASSED [ 47%]
+tests/test_function_size_calculator.py::TestPythonParser::test_python_class_methods PASSED [ 50%]
+tests/test_function_size_calculator.py::TestPythonParser::test_python_function_size PASSED [ 52%]
+tests/test_function_size_calculator.py::TestPythonParser::test_multiline_signature PASSED [ 55%]
+tests/test_function_size_calculator.py::TestPythonParser::test_parse_nonexistent_python_file PASSED [ 58%]
+tests/test_function_size_calculator.py::TestExcelWriter::test_write_results_single_repo PASSED [ 61%]
+tests/test_function_size_calculator.py::TestExcelWriter::test_write_results_multiple_repos PASSED [ 63%]
+tests/test_function_size_calculator.py::TestExcelWriter::test_sanitize_sheet_name PASSED [ 66%]
+tests/test_function_size_calculator.py::TestExcelWriter::test_top_n_parameter PASSED [ 69%]
+tests/test_function_size_calculator.py::TestExcelWriter::test_min_size_filter PASSED [ 72%]
+tests/test_function_size_calculator.py::TestExcelWriter::test_summary_statistics PASSED [ 75%]
+tests/test_function_size_calculator.py::TestJSONWriter::test_write_results_single_repo PASSED [ 77%]
+tests/test_function_size_calculator.py::TestJSONWriter::test_write_results_multiple_repos PASSED [ 80%]
+tests/test_function_size_calculator.py::TestJSONWriter::test_top_n_parameter PASSED [ 83%]
+tests/test_function_size_calculator.py::TestJSONWriter::test_min_size_filter PASSED [ 86%]
+tests/test_function_size_calculator.py::TestJSONWriter::test_min_size_filter_multiple_repos PASSED [ 88%]
+tests/test_function_size_calculator.py::TestScanRepository::test_scan_local_repository PASSED [ 91%]
+tests/test_function_size_calculator.py::TestScanRepository::test_scan_nonexistent_repository PASSED [ 94%]
+tests/test_function_size_calculator.py::TestScanRepository::test_relative_paths PASSED [ 97%]
+tests/test_function_size_calculator.py::TestCommandLineArguments::test_input_file_parsing PASSED [100%]
+
+============================== 36 passed in 0.38s ==============================
+```
+
+*Last updated: 2025-12-27 04:03:52 UTC*
+
 ## License
 
 This project is open source and available under the MIT License.
