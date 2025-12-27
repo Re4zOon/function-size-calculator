@@ -258,41 +258,54 @@ cachedir: .pytest_cache
 rootdir: /home/runner/work/function-size-calculator/function-size-calculator
 configfile: pytest.ini
 testpaths: tests
-collecting ... collected 27 items
-
-tests/test_function_size_calculator.py::TestFunctionInfo::test_function_info_creation PASSED [  3%]
-tests/test_function_size_calculator.py::TestFunctionInfo::test_function_info_repr PASSED [  7%]
-tests/test_function_size_calculator.py::TestFunctionInfo::test_function_info_to_dict PASSED [ 11%]
-tests/test_function_size_calculator.py::TestJavaScriptParser::test_parse_javascript_file PASSED [ 14%]
-tests/test_function_size_calculator.py::TestJavaScriptParser::test_parse_typescript_file PASSED [ 18%]
-tests/test_function_size_calculator.py::TestJavaScriptParser::test_function_size_calculation PASSED [ 22%]
-tests/test_function_size_calculator.py::TestJavaScriptParser::test_parse_nonexistent_file PASSED [ 25%]
-tests/test_function_size_calculator.py::TestJavaScriptParser::test_function_line_numbers PASSED [ 29%]
-tests/test_function_size_calculator.py::TestJavaParser::test_parse_java_file PASSED [ 33%]
-tests/test_function_size_calculator.py::TestJavaParser::test_java_method_modifiers PASSED [ 37%]
-tests/test_function_size_calculator.py::TestJavaParser::test_java_function_size PASSED [ 40%]
-tests/test_function_size_calculator.py::TestJavaParser::test_parse_nonexistent_java_file PASSED [ 44%]
-tests/test_function_size_calculator.py::TestExcelWriter::test_write_results_single_repo PASSED [ 48%]
-tests/test_function_size_calculator.py::TestExcelWriter::test_write_results_multiple_repos PASSED [ 51%]
-tests/test_function_size_calculator.py::TestExcelWriter::test_sanitize_sheet_name PASSED [ 55%]
-tests/test_function_size_calculator.py::TestExcelWriter::test_top_n_parameter PASSED [ 59%]
-tests/test_function_size_calculator.py::TestExcelWriter::test_min_size_filter PASSED [ 62%]
-tests/test_function_size_calculator.py::TestExcelWriter::test_summary_statistics PASSED [ 66%]
-tests/test_function_size_calculator.py::TestJSONWriter::test_write_results_single_repo PASSED [ 70%]
-tests/test_function_size_calculator.py::TestJSONWriter::test_write_results_multiple_repos PASSED [ 74%]
-tests/test_function_size_calculator.py::TestJSONWriter::test_top_n_parameter PASSED [ 77%]
-tests/test_function_size_calculator.py::TestJSONWriter::test_min_size_filter PASSED [ 81%]
-tests/test_function_size_calculator.py::TestJSONWriter::test_min_size_filter_multiple_repos PASSED [ 85%]
-tests/test_function_size_calculator.py::TestScanRepository::test_scan_local_repository PASSED [ 88%]
-tests/test_function_size_calculator.py::TestScanRepository::test_scan_nonexistent_repository PASSED [ 92%]
-tests/test_function_size_calculator.py::TestScanRepository::test_relative_paths PASSED [ 96%]
-tests/test_function_size_calculator.py::TestCommandLineArguments::test_input_file_parsing PASSED [100%]
-
-============================== 27 passed in 0.18s ==============================
 ```
 
 *Last updated: 2025-12-27 04:15:03 UTC*
 
+collecting ... collected 38 items
+
+tests/test_function_size_calculator.py::TestFunctionInfo::test_function_info_creation PASSED [  2%]
+tests/test_function_size_calculator.py::TestFunctionInfo::test_function_info_repr PASSED [  5%]
+tests/test_function_size_calculator.py::TestFunctionInfo::test_function_info_to_dict PASSED [  7%]
+tests/test_function_size_calculator.py::TestJavaScriptParser::test_parse_javascript_file PASSED [ 10%]
+tests/test_function_size_calculator.py::TestJavaScriptParser::test_parse_typescript_file PASSED [ 13%]
+tests/test_function_size_calculator.py::TestJavaScriptParser::test_function_size_calculation PASSED [ 15%]
+tests/test_function_size_calculator.py::TestJavaScriptParser::test_parse_nonexistent_file PASSED [ 18%]
+tests/test_function_size_calculator.py::TestJavaScriptParser::test_function_line_numbers PASSED [ 21%]
+tests/test_function_size_calculator.py::TestJavaParser::test_parse_java_file PASSED [ 23%]
+tests/test_function_size_calculator.py::TestJavaParser::test_java_method_modifiers PASSED [ 26%]
+tests/test_function_size_calculator.py::TestJavaParser::test_java_function_size PASSED [ 28%]
+tests/test_function_size_calculator.py::TestJavaParser::test_parse_nonexistent_java_file PASSED [ 31%]
+tests/test_function_size_calculator.py::TestCSharpParser::test_parse_csharp_file PASSED [ 34%]
+tests/test_function_size_calculator.py::TestCSharpParser::test_csharp_method_modifiers PASSED [ 36%]
+tests/test_function_size_calculator.py::TestCSharpParser::test_csharp_function_size PASSED [ 39%]
+tests/test_function_size_calculator.py::TestCSharpParser::test_parse_nonexistent_csharp_file PASSED [ 42%]
+tests/test_function_size_calculator.py::TestCSharpParser::test_csharp_method_with_brace_on_same_line PASSED [ 44%]
+tests/test_function_size_calculator.py::TestCSharpParser::test_csharp_pending_method_discarded_on_new_declaration PASSED [ 47%]
+tests/test_function_size_calculator.py::TestPythonParser::test_parse_python_file PASSED [ 50%]
+tests/test_function_size_calculator.py::TestPythonParser::test_python_class_methods PASSED [ 52%]
+tests/test_function_size_calculator.py::TestPythonParser::test_python_function_size PASSED [ 55%]
+tests/test_function_size_calculator.py::TestPythonParser::test_multiline_signature PASSED [ 57%]
+tests/test_function_size_calculator.py::TestPythonParser::test_parse_nonexistent_python_file PASSED [ 60%]
+tests/test_function_size_calculator.py::TestExcelWriter::test_write_results_single_repo PASSED [ 63%]
+tests/test_function_size_calculator.py::TestExcelWriter::test_write_results_multiple_repos PASSED [ 65%]
+tests/test_function_size_calculator.py::TestExcelWriter::test_sanitize_sheet_name PASSED [ 68%]
+tests/test_function_size_calculator.py::TestExcelWriter::test_top_n_parameter PASSED [ 71%]
+tests/test_function_size_calculator.py::TestExcelWriter::test_min_size_filter PASSED [ 73%]
+tests/test_function_size_calculator.py::TestExcelWriter::test_summary_statistics PASSED [ 76%]
+tests/test_function_size_calculator.py::TestJSONWriter::test_write_results_single_repo PASSED [ 78%]
+tests/test_function_size_calculator.py::TestJSONWriter::test_write_results_multiple_repos PASSED [ 81%]
+tests/test_function_size_calculator.py::TestJSONWriter::test_top_n_parameter PASSED [ 84%]
+tests/test_function_size_calculator.py::TestJSONWriter::test_min_size_filter PASSED [ 86%]
+tests/test_function_size_calculator.py::TestJSONWriter::test_min_size_filter_multiple_repos PASSED [ 89%]
+tests/test_function_size_calculator.py::TestScanRepository::test_scan_local_repository PASSED [ 92%]
+tests/test_function_size_calculator.py::TestScanRepository::test_scan_nonexistent_repository PASSED [ 94%]
+tests/test_function_size_calculator.py::TestScanRepository::test_relative_paths PASSED [ 97%]
+tests/test_function_size_calculator.py::TestCommandLineArguments::test_input_file_parsing PASSED [100%]
+
+```
+
+*Last updated: 2025-12-27 04:14:22 UTC*
 ## License
 
 This project is open source and available under the MIT License.
