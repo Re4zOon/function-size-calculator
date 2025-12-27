@@ -1,12 +1,12 @@
 # Function Size Calculator
 
-A Python tool that scans git repositories to find the largest functions in Java, Node.js, Python, and C# codebases. The results are exported to an Excel (XLSX) or JSON file with each repository on a separate tab.
+A Python tool that scans git repositories to find the largest functions in Java and Node.js codebases. The results are exported to an Excel (XLSX) or JSON file with each repository on a separate tab.
 
 ## Features
 
 - Scans multiple git repositories (local or remote)
 - **Parallel processing** for efficient scanning of multiple repositories
-- Supports Node.js (JavaScript, TypeScript), Java, Python, and **C#**
+- Supports Node.js (JavaScript, TypeScript) and Java
 - **Memory-efficient streaming** handles very large files without loading entire files into memory
 - **Multiple output formats**: Excel (XLSX) and JSON
 - **Configurable number of top functions** to report (default: 5)
@@ -226,29 +226,14 @@ To use JSON format, either:
 - Methods with various modifiers: `public static void method() {}`
 - Supports: `.java` files
 
-### Python
-- Function definitions: `def function_name():`
-- Async functions: `async def function_name():`
-- Class methods: `def method(self):`
-- Static and class methods
-- Supports: `.py` files
-
-### C#
-- Methods with various modifiers: `public async Task<string> Method() {}`
-- Access modifiers: public, private, protected, internal
-- Other modifiers: static, virtual, override, abstract, sealed, async
-- Generic return types
-- Supports: `.cs` files
-
 ## How It Works
 
 1. **Repository Access**: Clones remote repositories to temporary directories or uses local paths
 2. **Parallel Processing**: Scans multiple repositories concurrently for improved performance
-3. **File Discovery**: Recursively finds all relevant source files (skips `node_modules`, `.git`, `target`, `__pycache__`, etc.)
-4. **Function Parsing**: Uses streaming parsers with regex patterns and syntax-based parsing to identify function/method declarations
+3. **File Discovery**: Recursively finds all relevant source files (skips `node_modules`, `.git`, `target`, `build`, etc.)
+4. **Function Parsing**: Uses streaming parsers with regex patterns and brace-tracking to identify function/method declarations
    - **Memory-Efficient**: Processes files line-by-line without loading entire files into memory, allowing analysis of very large files
    - **JavaScript/TypeScript/Java**: Counts lines by tracking brace pairs `{}`
-   - **Python**: Uses indentation-based parsing
 5. **Size Calculation**: Counts lines from function start to end
 6. **Filtering**: Applies minimum size filter to exclude trivial functions
 7. **Ranking**: Sorts functions by line count and selects top N per repository
@@ -268,11 +253,15 @@ To use JSON format, either:
 
 ```
 ============================= test session starts ==============================
-platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0 -- /opt/hostedtoolcache/Python/3.12.12/x64/bin/python
+platform linux -- Python 3.12.3, pytest-9.0.2, pluggy-1.6.0 -- /usr/bin/python3
 cachedir: .pytest_cache
 rootdir: /home/runner/work/function-size-calculator/function-size-calculator
 configfile: pytest.ini
 testpaths: tests
+```
+
+*Last updated: 2025-12-27 04:15:03 UTC*
+
 collecting ... collected 38 items
 
 tests/test_function_size_calculator.py::TestFunctionInfo::test_function_info_creation PASSED [  2%]
@@ -314,7 +303,6 @@ tests/test_function_size_calculator.py::TestScanRepository::test_scan_nonexisten
 tests/test_function_size_calculator.py::TestScanRepository::test_relative_paths PASSED [ 97%]
 tests/test_function_size_calculator.py::TestCommandLineArguments::test_input_file_parsing PASSED [100%]
 
-============================== 38 passed in 0.36s ==============================
 ```
 
 *Last updated: 2025-12-27 04:14:22 UTC*
