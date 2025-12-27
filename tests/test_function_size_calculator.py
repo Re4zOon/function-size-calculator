@@ -596,6 +596,17 @@ class TestIsTestFile:
         assert is_test_file(Path("/src/Tests/Sample.java")) is True
         assert is_test_file(Path("/src/TESTS/Sample.java")) is True
 
+    def test_java_maven_gradle_structure(self):
+        """Should handle standard Java Maven/Gradle src/test directory structure."""
+        # Files in src/test should be excluded regardless of filename
+        assert is_test_file(Path("src/test/java/com/example/CalculatorTest.java")) is True
+        assert is_test_file(Path("src/test/java/com/example/Helper.java")) is True
+        assert is_test_file(Path("src/test/java/Utils.java")) is True
+        
+        # Files in src/main should be included
+        assert is_test_file(Path("src/main/java/com/example/Calculator.java")) is False
+        assert is_test_file(Path("src/main/java/com/example/Service.java")) is False
+
 
 class TestExcludeTestFiles:
     """Tests for ensuring test files are excluded from repository scanning."""

@@ -265,12 +265,18 @@ _JS_TEST_PATTERNS = ('.test.', '.spec.')
 
 def is_test_file(file_path: Path) -> bool:
     """
-    Determine if a file is a test file based on common naming patterns.
+    Determine if a file is a test file based on directory structure and naming patterns.
 
-    Identifies test files using the following patterns:
-    - Java: Files ending with 'Test.java' or 'Tests.java' (e.g., CalculatorTest.java)
-    - JavaScript/TypeScript: Files containing '.test.' or '.spec.' (e.g., app.test.js, component.spec.ts)
-    - All languages: Files in test directories (test, tests, __tests__, spec, specs) - case insensitive
+    Primary detection method: Directory-based exclusion
+    - Files in test directories are excluded (most reliable for Java projects with src/test structure)
+    
+    Secondary detection: Filename patterns
+    - Java: Files ending with 'Test.java' or 'Tests.java' (for tests outside standard directories)
+    - JavaScript/TypeScript: Files containing '.test.' or '.spec.' (common JS/TS convention)
+    
+    Test directories detected (case-insensitive):
+    - test, tests, __tests__, spec, specs
+    - This covers standard Java (src/test/java) and JavaScript (__tests__) structures
 
     Args:
         file_path: Path object representing the file to check
@@ -279,23 +285,25 @@ def is_test_file(file_path: Path) -> bool:
         True if the file appears to be a test file, False otherwise
 
     Examples:
-        >>> is_test_file(Path("src/CalculatorTest.java"))
+        >>> is_test_file(Path("src/test/java/CalculatorTest.java"))
         True
-        >>> is_test_file(Path("src/Calculator.java"))
+        >>> is_test_file(Path("src/test/java/Helper.java"))  # Any file in test directory
+        True
+        >>> is_test_file(Path("src/main/java/Calculator.java"))
         False
         >>> is_test_file(Path("src/app.test.js"))
         True
-        >>> is_test_file(Path("tests/helper.js"))
+        >>> is_test_file(Path("__tests__/helper.js"))
         True
     """
     filename = file_path.name
     parts = file_path.parts
     
-    # Check if in test-related directories
+    # Primary: Check if in test-related directories (handles src/test/java, etc.)
     if any(part.lower() in _TEST_DIRS for part in parts):
         return True
     
-    # Check Java test patterns
+    # Secondary: Check Java test filename patterns (for edge cases)
     if filename.endswith('.java'):
         # Common Java test patterns: *Test.java, *Tests.java
         # Note: We avoid Test*.java prefix pattern to prevent false positives
@@ -303,7 +311,7 @@ def is_test_file(file_path: Path) -> bool:
         if filename.endswith('Test.java') or filename.endswith('Tests.java'):
             return True
     
-    # Check JavaScript/TypeScript test patterns
+    # Secondary: Check JavaScript/TypeScript test filename patterns
     # Patterns: *.test.js, *.spec.js, *.test.ts, *.spec.ts, etc.
     if any(pattern in filename for pattern in _JS_TEST_PATTERNS):
         return True
