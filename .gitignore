@@ -27,3 +27,6 @@ repos.txt
 
 # Pytest cache
 .pytest_cache/
+
+# Ruff cache
+.ruff_cache/
